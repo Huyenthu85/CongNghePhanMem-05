@@ -4,8 +4,8 @@
 **Hướng triển khai:** Backend theo kiến trúc 3 lớp, tích hợp CI/CD  
 **Nhóm:** 05 
 **Thành viên:** 
-Lưu Huyền Thư /n
-Nguyễn Ngọc Xuân Trúc /n
+Lưu Huyền Thư / 
+Nguyễn Ngọc Xuân Trúc / 
 Huỳnh Thị Mỹ Tiên
 ## Tuần 1: Tìm hiểu đề tài và lựa chọn hướng triển khai
 ### Mục tiêu
