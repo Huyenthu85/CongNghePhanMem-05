@@ -1,961 +1,131 @@
-# NHẬT KÝ LÀM VIỆC NHÓM
-
-## Đề tài: Hệ thống thuyết minh tự động đa ngôn ngữ
-
-**Hướng thực hiện:** Backend Development theo kiến trúc 3 lớp, kết hợp CI/CD.
-
----
-
-# TUẦN 1 - TÌM HIỂU ĐỀ TÀI VÀ XÁC ĐỊNH HƯỚNG THỰC HIỆN
-
-## Mục tiêu
-
-Trong tuần đầu tiên, nhóm tập trung tìm hiểu nội dung của đề tài **Thuyết minh tự động đa ngôn ngữ**, xác định hệ thống cần giải quyết bài toán gì và lựa chọn hướng triển khai phù hợp với yêu cầu Backend Development theo kiến trúc 3 lớp.
-
-Tuần này nhóm chủ yếu thực hiện quá trình tìm hiểu, chưa bắt đầu xây dựng chương trình.
-
-## Công việc đã thực hiện
-
-- Tìm hiểu yêu cầu chung của đề tài thuyết minh tự động đa ngôn ngữ.
-- Thảo luận về cách người dùng có thể cung cấp dữ liệu đầu vào cho hệ thống.
-- Xác định ba loại dữ liệu đầu vào dự kiến:
-  - Văn bản.
-  - Giọng nói.
-  - Hình ảnh có chứa văn bản.
-- Tìm hiểu quy trình xử lý chung của hệ thống.
-- Tìm hiểu Speech To Text.
-- Tìm hiểu OCR.
-- Tìm hiểu Translation.
-- Tìm hiểu Text To Speech.
-- Tìm hiểu cách tổ chức Backend theo kiến trúc 3 lớp.
-- Tìm hiểu ASP.NET Core Web API để sử dụng làm công nghệ Backend.
-
-## Hướng xử lý được xác định
-
-Nhóm bước đầu xác định hệ thống sẽ xử lý dữ liệu theo hướng:
-
-```text
-                    INPUT
-                      |
-       +--------------+--------------+
-       |              |              |
-    Văn bản        Giọng nói       Hình ảnh
-       |              |              |
-       |        Speech To Text        |
-       |              |             OCR
-       |              |              |
-       +--------------+--------------+
-                      |
-                      v
-                    TEXT
-                      |
-                      v
-                 TRANSLATION
-                      |
-                      v
-              TRANSLATED TEXT
-                      |
-               +------+------+
-               |             |
-               v             v
-          Hiển thị      Text To Speech
-                             |
-                             v
-                           Audio
-```
-
-Trong đó, dù dữ liệu đầu vào là văn bản, giọng nói hay hình ảnh thì cuối cùng hệ thống sẽ cố gắng chuyển dữ liệu về dạng văn bản trước khi thực hiện dịch.
-
-## Kiến trúc Backend dự kiến
-
-Nhóm xác định Backend sẽ được tổ chức theo kiến trúc:
-
-```text
-Presentation Layer
-        |
-        v
-Business Logic Layer
-        |
-        v
-Data Access Layer
-        |
-        v
-Database
-```
-
-Tương ứng với:
-
-```text
-Controller
-    |
-    v
-Service
-    |
-    v
-Repository
-    |
-    v
-Database
-```
-
-## Kết quả tuần 1
+# NHẬT KÝ LÀM VIỆC NHÓM — 3 TUẦN ĐẦU
 
-Sau tuần đầu tiên, nhóm đã:
+**Đề tài:** Hệ thống thuyết minh tự động đa ngôn ngữ  
+**Hướng triển khai:** Backend theo kiến trúc 3 lớp, tích hợp CI/CD  
+**Nhóm:** 05 
+**Thành viên:** 
+Lưu Huyền Thư 
+Nguyễn Ngọc Xuân Trúc 
+Huỳnh Thị Mỹ Tiên
+## Tuần 1: Tìm hiểu đề tài và lựa chọn hướng triển khai
+### Mục tiêu
 
-- Hiểu được yêu cầu tổng quát của đề tài.
-- Xác định hướng hệ thống hỗ trợ nhiều loại dữ liệu đầu vào.
-- Xác định ba loại đầu vào chính gồm Text, Speech và Image.
-- Hiểu được vai trò cơ bản của Speech To Text.
-- Hiểu được vai trò của OCR.
-- Hiểu được vai trò của Translation.
-- Hiểu được vai trò của Text To Speech.
-- Xác định hướng sử dụng ASP.NET Core Web API.
-- Hiểu sơ bộ cách tổ chức Backend theo kiến trúc 3 lớp.
+Hiểu yêu cầu của đề tài thuyết minh tự động đa ngôn ngữ và xác định hướng thực hiện phù hợp với nhóm.
 
-## Khó khăn
+### Nội dung công việc
 
-Một số vấn đề nhóm chưa xác định được trong tuần này:
+- Tìm hiểu các hướng triển khai: frontend, backend theo kiến trúc 3 lớp và backend gồm các dịch vụ giao tiếp với nhau.
+- Lựa chọn hướng phát triển backend theo kiến trúc 3 lớp, có tích hợp CI/CD.
+- Xem xét tài liệu tham khảo về hệ thống du lịch ẩm thực Quận 4.
+- Tìm hiểu khái quát các thành phần: địa điểm, nội dung thuyết minh, ngôn ngữ, âm thanh và vị trí GPS.
+- Ghi nhận các vấn đề chưa rõ về phạm vi chức năng, sản phẩm bàn giao và trách nhiệm frontend–backend.
 
-- Chưa xác định đầy đủ chức năng của hệ thống.
-- Chưa lựa chọn công nghệ cụ thể cho Speech To Text.
-- Chưa lựa chọn công nghệ cụ thể cho OCR.
-- Chưa lựa chọn Translation Service.
-- Chưa lựa chọn Text To Speech Service.
-- Chưa thiết kế Database.
-- Chưa thiết kế API.
+### Kết quả
 
-## Kế hoạch tuần 2
+- Xác định đề tài và hướng kỹ thuật của nhóm.
+- Nhận diện được luồng tổng quát: người dùng đến địa điểm và nghe nội dung giới thiệu bằng ngôn ngữ lựa chọn.
+- Xác định cần làm rõ yêu cầu trước khi thiết kế dữ liệu và lập trình.
 
-- Xác định phạm vi hệ thống.
-- Xác định các chức năng chính.
-- Xác định Actor.
-- Phân tích chi tiết luồng Text, Speech và Image.
-- Tìm hiểu cách thiết kế RESTful API.
-- Xác định các Entity cần quản lý.
-- Xác định cấu trúc Backend 3 lớp chi tiết hơn.
-- Tìm hiểu hướng triển khai CI/CD.
+### Khó khăn, tồn đọng
 
----
+- Tài liệu tham khảo mô tả nhiều chức năng, nhóm chưa phân biệt rõ phần cốt lõi và phần mở rộng.
+- Chưa xác định đầy đủ các đối tượng sử dụng và quy tắc nghiệp vụ.
 
-# TUẦN 2 - PHÂN TÍCH CHỨC NĂNG VÀ CÁCH TRIỂN KHAI HỆ THỐNG
+### Công việc tiếp theo
 
-## Mục tiêu
-
-Trong tuần 2, nhóm tiếp tục quá trình tìm hiểu nhưng tập trung nhiều hơn vào cách triển khai thực tế của hệ thống.
-
-Mục tiêu chính là xác định phạm vi của phiên bản đầu tiên, các chức năng cần có và cách tổ chức các thành phần trong Backend trước khi bắt đầu viết code.
-
-## Công việc đã thực hiện
-
-### 1. Xác định phạm vi hệ thống
-
-Nhóm thống nhất phiên bản đầu tiên sẽ tập trung vào ba chức năng chính:
-
-```text
-Dịch văn bản
-Dịch từ giọng nói
-Dịch nội dung văn bản trong hình ảnh
-```
-
-Ngoài ra, hệ thống dự kiến có chức năng đọc văn bản đã dịch bằng giọng nói.
-
-Các chức năng quá phức tạp chưa được đưa vào phiên bản đầu tiên như:
-
-- Nhận diện vật thể trong ảnh.
-- Nhận diện cảnh vật.
-- Clone giọng nói.
-- Đồng bộ khẩu hình.
-- Dịch video hoàn chỉnh.
-- Dịch hội thoại thời gian thực.
-
-### 2. Xác định Actor
-
-Nhóm bước đầu xác định:
-
-```text
-Guest
-User
-```
-
-#### Guest
-
-Có thể:
-
-- Truy cập hệ thống.
-- Đăng ký.
-- Đăng nhập.
-
-#### User
-
-Có thể:
-
-- Dịch văn bản.
-- Dịch từ giọng nói.
-- Dịch nội dung trong hình ảnh.
-- Chọn ngôn ngữ nguồn.
-- Chọn ngôn ngữ đích.
-- Nghe nội dung đã dịch.
-- Xem lịch sử dịch.
-
-### 3. Xác định các chức năng chính
-
-Các nhóm chức năng dự kiến:
-
-```text
-Authentication
-Text Translation
-Speech Translation
-Image Translation
-Text To Speech
-Translation History
-```
-
-### 4. Phân tích luồng dịch văn bản
-
-```text
-Người dùng nhập văn bản
-          |
-          v
-Chọn ngôn ngữ nguồn
-          |
-          v
-Chọn ngôn ngữ đích
-          |
-          v
-Translation
-          |
-          v
-Văn bản kết quả
-```
-
-### 5. Phân tích luồng dịch giọng nói
-
-```text
-Người dùng nói / gửi Audio
-          |
-          v
-Speech To Text
-          |
-          v
-        Text
-          |
-          v
-Translation
-          |
-          v
-Translated Text
-```
-
-Nếu người dùng muốn nghe kết quả:
-
-```text
-Translated Text
-      |
-      v
-Text To Speech
-      |
-      v
-    Audio
-```
-
-### 6. Phân tích luồng dịch hình ảnh
-
-```text
-Người dùng tải hình ảnh
-          |
-          v
-         OCR
-          |
-          v
-Trích xuất văn bản
-          |
-          v
-Translation
-          |
-          v
-Translated Text
-```
-
-### 7. Xác định cách tái sử dụng chức năng Translation
-
-Nhóm nhận thấy không cần xây dựng ba chức năng dịch hoàn toàn riêng biệt.
-
-Thay vào đó:
-
-```text
-Text ---------------------------+
-                                |
-Speech -> Speech To Text -------+----> TranslationService
-                                |
-Image -> OCR -------------------+
-```
-
-Như vậy `TranslationService` có thể được sử dụng chung cho cả ba loại đầu vào.
-
-### 8. Thiết kế API sơ bộ
-
-Một số API dự kiến:
-
-```text
-POST /api/auth/register
-POST /api/auth/login
-
-POST /api/translate/text
-POST /api/translate/speech
-POST /api/translate/image
-
-POST /api/speech/synthesize
-
-GET /api/history
-GET /api/history/{id}
-```
-
-### 9. Xác định Entity sơ bộ
-
-Nhóm bước đầu xác định các Entity:
-
-```text
-User
-TranslationHistory
-MediaFile
-```
-
-Trong đó:
-
-```text
-User
-- UserId
-- FullName
-- Email
-- PasswordHash
-- CreatedAt
-```
-
-```text
-TranslationHistory
-- HistoryId
-- UserId
-- InputType
-- SourceLanguage
-- TargetLanguage
-- OriginalText
-- TranslatedText
-- CreatedAt
-```
-
-`InputType` dự kiến gồm:
-
-```text
-TEXT
-SPEECH
-IMAGE
-```
-
-### 10. Xác định cấu trúc Backend
-
-Cấu trúc dự kiến:
-
-```text
-MultilingualTranslator
-│
-├── MultilingualTranslator.API
-├── MultilingualTranslator.Business
-├── MultilingualTranslator.Data
-└── MultilingualTranslator.Tests
-```
-
-Trong đó:
-
-```text
-API
- |
- v
-Business
- |
- v
-Data
-```
-
-### 11. Tìm hiểu hướng triển khai CI/CD
-
-Nhóm tìm hiểu quy trình CI:
-
-```text
-Push / Pull Request
-        |
-        v
-GitHub Actions
-        |
-        v
-Restore
-        |
-        v
-Build
-        |
-        v
-Test
-```
-
-Quy trình CD dự kiến:
-
-```text
-Merge main
-    |
-    v
-Build
-    |
-    v
-Test
-    |
-    v
-Docker
-    |
-    v
-Deploy
-```
-
-Trong tuần 2 nhóm mới dừng ở mức tìm hiểu cách triển khai, chưa xây dựng Pipeline thực tế.
-
-## Kết quả tuần 2
-
-Sau tuần 2, nhóm đã:
-
-- Xác định phạm vi MVP.
-- Xác định Actor.
-- Xác định các chức năng chính.
-- Phân tích luồng xử lý Text.
-- Phân tích luồng xử lý Speech.
-- Phân tích luồng xử lý Image.
-- Xác định Translation là chức năng xử lý chung.
-- Xây dựng danh sách API sơ bộ.
-- Xác định Entity ban đầu.
-- Xác định cấu trúc Backend theo kiến trúc 3 lớp.
-- Có định hướng ban đầu cho CI/CD.
-
-## Khó khăn
-
-Một số vấn đề chưa hoàn thiện:
-
-- API mới ở mức thiết kế sơ bộ.
-- Database chưa được thiết kế đầy đủ.
-- Chưa lựa chọn Translation Service cụ thể.
-- Chưa lựa chọn Speech To Text cụ thể.
-- Chưa lựa chọn OCR cụ thể.
-- Chưa lựa chọn Text To Speech cụ thể.
-- Chưa triển khai CI/CD thực tế.
-
-## Kế hoạch tuần 3
-
-- Bắt đầu tạo Backend.
-- Khởi tạo ASP.NET Core Web API.
-- Tạo Solution.
-- Tạo cấu trúc 3 lớp.
-- Cấu hình Swagger.
-- Tạo API kiểm tra.
-- Bắt đầu thử nghiệm chức năng Text Translation.
-- Chuẩn bị cấu trúc Database.
-
----
-
-# TUẦN 3 - BẮT ĐẦU XÂY DỰNG BACKEND CƠ BẢN
-
-## Mục tiêu
-
-Sau hai tuần tìm hiểu và phân tích, nhóm bắt đầu chuyển sang giai đoạn thực hiện.
-
-Trong tuần này nhóm chưa thực hiện các chức năng lớn mà tập trung xây dựng nền tảng Backend để chuẩn bị cho việc phát triển các chức năng sau này.
-
-## Công việc đã thực hiện
-
-### 1. Khởi tạo Backend
-
-Nhóm bắt đầu tạo project sử dụng:
-
-```text
-ASP.NET Core Web API
-```
-
-Solution dự kiến:
-
-```text
-MultilingualTranslator.sln
-```
-
-### 2. Tạo cấu trúc 3 lớp
-
-Cấu trúc ban đầu:
-
-```text
-MultilingualTranslator
-│
-├── MultilingualTranslator.API
-├── MultilingualTranslator.Business
-└── MultilingualTranslator.Data
-```
-
-### 3. Tạo Presentation Layer
-
-Project:
-
-```text
-MultilingualTranslator.API
-```
-
-Cấu trúc:
-
-```text
-Controllers
-Program.cs
-appsettings.json
-```
-
-Presentation Layer được sử dụng để tiếp nhận HTTP Request và trả Response cho Client.
-
-### 4. Tạo Business Logic Layer
-
-Project:
-
-```text
-MultilingualTranslator.Business
-```
+Phân tích hành trình người dùng, xác định các đối tượng tham gia và tổng hợp câu hỏi để làm rõ phạm vi đề án.
 
-Cấu trúc:
+## Tuần 2: Phân tích đối tượng sử dụng và luồng nghiệp vụ
+### Mục tiêu
 
-```text
-Interfaces
-Services
-DTOs
-```
+Xác định hệ thống phục vụ những đối tượng nào và mỗi đối tượng thực hiện những công việc gì.
 
-Business Layer sẽ chứa các xử lý nghiệp vụ chính.
-
-### 5. Tạo Data Access Layer
-
-Project:
-
-```text
-MultilingualTranslator.Data
-```
-
-Cấu trúc dự kiến:
-
-```text
-Entities
-Interfaces
-Repositories
-AppDbContext
-```
-
-### 6. Xác định luồng xử lý giữa các Layer
-
-```text
-Controller
-    |
-    v
-Service
-    |
-    v
-Repository
-    |
-    v
-Database
-```
-
-Nhóm thống nhất:
-
-- Controller không truy cập trực tiếp Database.
-- Controller chủ yếu nhận Request và trả Response.
-- Service xử lý nghiệp vụ.
-- Repository làm việc với dữ liệu.
-
-### 7. Kiểm tra project
-
-Nhóm tiến hành Build và chạy thử Backend.
-
-```bash
-dotnet build
-```
-
-Sau đó:
-
-```bash
-dotnet run
-```
-
-Mục tiêu là đảm bảo cấu trúc project có thể chạy trước khi xây dựng các chức năng nghiệp vụ.
-
-### 8. Cấu hình Swagger
-
-Swagger được sử dụng để:
-
-- Xem các Endpoint.
-- Gửi Request.
-- Kiểm tra Response.
-- Test Backend trong thời gian chưa có Frontend hoàn chỉnh.
+### Nội dung công việc
 
-### 9. Tạo API kiểm tra
+- Tổng hợp câu hỏi về chức năng bắt buộc, cách kích hoạt thuyết minh, nội dung đa ngôn ngữ và yêu cầu CI/CD.
+- Xác định ba đối tượng chính: người dùng, chủ quán và quản trị viên.
+- Làm rõ vai trò của nhiều chủ quán: mỗi chủ quán cung cấp dữ liệu của quán mình cho quản trị viên xử lý.
+- Phác thảo quy trình gửi, kiểm tra, duyệt và công bố nội dung.
+- Xác định luồng sử dụng có thu phí: người dùng thanh toán qua QR trước khi sử dụng thuyết minh.
+- Xác định GPS là cơ sở để kích hoạt bài thuyết minh khi người dùng đến gần địa điểm.
 
-Nhóm bắt đầu bằng một API đơn giản:
-
-```http
-GET /api/health
-```
-
-Response dự kiến:
-
-```json
-{
-  "status": "OK"
-}
-```
-
-API này được sử dụng để kiểm tra:
-
-- Controller hoạt động.
-- Routing hoạt động.
-- Swagger hoạt động.
-- Backend trả Response bình thường.
-
-### 10. Bắt đầu chuẩn bị chức năng Text Translation
-
-Nhóm lựa chọn Text Translation làm chức năng đầu tiên vì đây là luồng đơn giản nhất và sẽ được tái sử dụng cho Speech và Image sau này.
-
-Luồng dự kiến:
-
-```text
-Text Input
-    |
-    v
-TranslationController
-    |
-    v
-TranslationService
-    |
-    v
-Translation Provider
-    |
-    v
-Translated Text
-```
-
-API dự kiến:
-
-```http
-POST /api/translate/text
-```
-
-## Kết quả tuần 3
-
-Sau tuần 3, nhóm đã:
-
-- Bắt đầu xây dựng Backend.
-- Tạo Solution.
-- Tạo các Project cho kiến trúc 3 lớp.
-- Xác định rõ Controller, Service và Repository.
-- Kiểm tra Backend có thể Build.
-- Kiểm tra Backend có thể chạy.
-- Cấu hình Swagger.
-- Chuẩn bị API kiểm tra.
-- Bắt đầu xây dựng cấu trúc cho Text Translation.
-
-## Khó khăn
-
-- Cần thống nhất cách tổ chức Interface và Service.
-- Database vẫn chưa hoàn thiện.
-- Chưa lựa chọn Translation Provider chính thức.
-- Chưa tích hợp các dịch vụ bên ngoài.
-- Cần tìm hiểu thêm Dependency Injection trong ASP.NET Core.
+### Kết quả
 
-## Kế hoạch tuần 4
-
-- Hoàn thiện cấu trúc Text Translation.
-- Thiết kế Database cơ bản.
-- Tạo các Entity đầu tiên.
-- Tạo `AppDbContext`.
-- Kết nối SQL Server.
-- Tạo Migration.
-- Thử nghiệm lưu lịch sử dịch.
-- Chuẩn bị CI cơ bản.
-
----
-
-# TUẦN 4 - TRIỂN KHAI CHỨC NĂNG DỊCH VĂN BẢN VÀ DATABASE
-
-## Mục tiêu
-
-Trong tuần 4, nhóm bắt đầu triển khai chức năng nghiệp vụ đầu tiên của hệ thống là **dịch văn bản**, đồng thời xây dựng Database cơ bản để phục vụ việc lưu thông tin người dùng và lịch sử dịch.
-
-## Công việc đã thực hiện
-
-### 1. Hoàn thiện cấu trúc Text Translation
-
-Nhóm tiếp tục xây dựng luồng:
-
-```text
-Client
-  |
-  v
-TranslationController
-  |
-  v
-TranslationService
-  |
-  v
-Translation Provider
-  |
-  v
-Translated Text
-  |
-  v
-Response
-```
-
-API:
-
-```http
-POST /api/translate/text
-```
-
-Request dự kiến:
-
-```json
-{
-  "text": "Xin chào",
-  "sourceLanguage": "vi",
-  "targetLanguage": "en"
-}
-```
-
-Response dự kiến:
-
-```json
-{
-  "originalText": "Xin chào",
-  "translatedText": "Hello",
-  "sourceLanguage": "vi",
-  "targetLanguage": "en"
-}
-```
-
-### 2. Tạo DTO cho chức năng dịch
+| Đối tượng | Vai trò sơ bộ |
+|---|---|
+| Người dùng | Thanh toán, chọn ngôn ngữ và nghe thuyết minh theo vị trí |
+| Chủ quán | Cung cấp và đề nghị cập nhật thông tin của quán mình |
+| Quản trị viên | Xử lý, duyệt và công bố nội dung; quản lý hoạt động hệ thống |
 
-Nhóm bắt đầu tách dữ liệu Request và Response khỏi Entity.
+Luồng nghiệp vụ sơ bộ: **chủ quán gửi dữ liệu → quản trị viên xử lý và công bố → người dùng thanh toán → sử dụng thuyết minh theo GPS**.
 
-Các DTO dự kiến:
+### Khó khăn, tồn đọng
 
-```text
-TranslateTextRequest
-TranslateTextResponse
-```
+- Chưa phân biệt rõ thời gian truy cập ứng dụng và thời gian thực tế phát thuyết minh.
+- Cần xác định cách nhận diện người đã thanh toán và lưu quyền sử dụng.
+- Chưa chốt mức độ đầu tư giao diện.
 
-Mục tiêu là tránh sử dụng trực tiếp Entity làm dữ liệu truyền qua API.
+### Công việc tiếp theo
 
-### 3. Thiết kế Database cơ bản
+Làm rõ cách tính phí theo thời lượng, yêu cầu đăng nhập và phạm vi giao diện phục vụ backend.
 
-Nhóm bắt đầu xây dựng Database cho hệ thống.
+## Tuần 3: Làm rõ thời lượng nghe và phạm vi backend
 
-Các Entity đầu tiên:
+### Mục tiêu
 
-```text
-User
-TranslationHistory
-```
+Hoàn thiện định hướng nghiệp vụ cốt lõi và xác định các phần backend cần triển khai.
 
-### 4. Xây dựng Entity User
+### Nội dung công việc
 
-Thông tin dự kiến:
+- Xác định người dùng mua **số phút nghe thực tế**, không phải thời gian truy cập liên tục.
+- Xác định nguyên tắc: chỉ trừ thời lượng khi âm thanh đang phát; không trừ khi tạm dừng hoặc chưa phát bài.
+- Xác định người dùng nghe thuyết minh không cần đăng nhập.
+- Đề xuất cơ chế vé truy cập ẩn danh để liên kết giao dịch thanh toán với thời lượng còn lại.
+- Xác định giao diện sử dụng các trang và form đơn giản để thao tác, tập trung phát triển backend.
+- Phân chia trách nhiệm ba lớp: tiếp nhận yêu cầu, xử lý nghiệp vụ và truy cập dữ liệu.
+- Xác định nhu cầu kiểm thử tự động và tích hợp CI/CD trong quá trình phát triển.
 
-```text
-User
-----------------------
-UserId
-FullName
-Email
-PasswordHash
-CreatedAt
-```
+### Kết quả
 
-### 5. Xây dựng Entity TranslationHistory
+Các yêu cầu đã xác định:
 
-Thông tin dự kiến:
+- Hệ thống có ba đối tượng: người dùng, chủ quán và quản trị viên.
+- Người dùng không cần đăng nhập để mua và sử dụng phút nghe.
+- Người dùng thanh toán qua QR để nhận thời lượng nghe.
+- Thời lượng được tính theo thời gian âm thanh thực sự phát.
+- GPS được sử dụng để kích hoạt nội dung tại địa điểm.
+- Chủ quán cung cấp dữ liệu cho quản trị viên xử lý.
+- Giao diện đơn giản; trọng tâm là backend 3 lớp và CI/CD.
 
-```text
-TranslationHistory
-----------------------
-HistoryId
-UserId
-InputType
-SourceLanguage
-TargetLanguage
-OriginalText
-TranslatedText
-CreatedAt
-```
-
-### 6. Xác định quan hệ dữ liệu
+Các nhóm nghiệp vụ backend dự kiến:
 
-Một User có thể có nhiều TranslationHistory.
-
-```text
-USER
-  1
-  |
-  |
-  N
-TRANSLATION_HISTORY
-```
-
-### 7. Chuẩn bị AppDbContext
-
-Nhóm bắt đầu tạo:
-
-```text
-AppDbContext
-```
-
-để Entity Framework Core làm việc với Database.
-
-Dự kiến:
-
-```text
-AppDbContext
-│
-├── Users
-└── TranslationHistories
-```
-
-### 8. Cấu hình kết nối Database
-
-Nhóm chuẩn bị cấu hình:
-
-```text
-Connection String
-```
-
-trong:
-
-```text
-appsettings.json
-```
-
-Backend dự kiến kết nối với:
-
-```text
-SQL Server
-```
-
-### 9. Tìm hiểu và chuẩn bị Migration
-
-Nhóm bắt đầu tìm hiểu và sử dụng Migration để tạo Database từ các Entity.
-
-Quy trình:
-
-```text
-Entity
-   |
-   v
-Migration
-   |
-   v
-Database
-```
-
-### 10. Chuẩn bị lưu lịch sử dịch
-
-Sau khi Translation hoàn thành, kết quả dự kiến được lưu:
-
-```text
-TranslationService
-        |
-        v
-TranslationHistoryRepository
-        |
-        v
-Database
-```
-
-Thông tin lưu bao gồm:
-
-- Loại dữ liệu đầu vào.
-- Ngôn ngữ nguồn.
-- Ngôn ngữ đích.
-- Văn bản ban đầu.
-- Văn bản đã dịch.
-- Thời gian thực hiện.
-
-### 11. Chuẩn bị Repository
-
-Nhóm bắt đầu xác định:
-
-```text
-ITranslationHistoryRepository
-TranslationHistoryRepository
-```
-
-để tách phần truy cập Database khỏi Business Logic Layer.
-
-### 12. Chuẩn bị CI cơ bản
-
-Nhóm bắt đầu chuẩn bị workflow CI với mục tiêu đầu tiên là tự động kiểm tra Backend có Build được hay không.
-
-Quy trình dự kiến:
-
-```text
-Push Code
-    |
-    v
-GitHub Actions
-    |
-    v
-dotnet restore
-    |
-    v
-dotnet build
-```
-
-Sau khi nhóm xây dựng Unit Test, bước:
-
-```text
-dotnet test
-```
-
-sẽ được bổ sung.
-
-## Kết quả tuần 4
-
-Sau tuần 4, nhóm bước đầu:
-
-- Hoàn thiện hơn cấu trúc Text Translation.
-- Xác định Request và Response của API dịch văn bản.
-- Bắt đầu sử dụng DTO.
-- Thiết kế Database cơ bản.
-- Xác định Entity User.
-- Xác định Entity TranslationHistory.
-- Xác định quan hệ giữa User và TranslationHistory.
-- Chuẩn bị AppDbContext.
-- Chuẩn bị kết nối SQL Server.
-- Tìm hiểu và chuẩn bị Migration.
-- Xác định cách lưu lịch sử dịch.
-- Chuẩn bị Repository cho lịch sử dịch.
-- Bắt đầu chuẩn bị CI cơ bản.
-
-## Khó khăn
-
-Một số vấn đề cần tiếp tục xử lý:
-
-- Translation Provider chưa được lựa chọn chính thức.
-- Cần xử lý trường hợp Translation Service bị lỗi.
-- Cần hoàn thiện Validation cho dữ liệu đầu vào.
-- Cần hoàn thiện cấu hình Entity Framework Core.
-- Cần kiểm tra lại thiết kế Database trước khi mở rộng.
-- CI mới chỉ ở giai đoạn cơ bản.
-
-## Kế hoạch tuần 5
-
-- Hoàn thiện Text Translation.
-- Hoàn thiện kết nối Database.
-- Hoàn thiện lưu lịch sử dịch.
-- Xây dựng API xem lịch sử.
-- Bắt đầu xây dựng chức năng đăng ký và đăng nhập.
-- Chuẩn bị JWT Authentication.
-- Tiếp tục hoàn thiện CI.
+| Nhóm nghiệp vụ | Nội dung |
+|---|---|
+| Thanh toán | Tạo đơn, xác nhận kết quả và tránh cộng thời lượng trùng |
+| Quyền nghe | Quản lý vé truy cập và số giây còn lại |
+| Phiên nghe | Ghi nhận thời gian phát, trừ thời lượng và xử lý hết phút |
+| Nội dung | Tiếp nhận dữ liệu chủ quán, duyệt và công bố |
+| Đa ngôn ngữ | Quản lý bản dịch và âm thanh theo ngôn ngữ |
+| Địa điểm | Quản lý tọa độ và thông tin phục vụ kích hoạt theo GPS |
+
+### Vấn đề cần tiếp tục thống nhất
+
+- Giá và thời lượng của từng gói nghe.
+- Cách khôi phục quyền nghe khi đổi thiết bị hoặc mất dữ liệu trình duyệt.
+- Cách xử lý khi mất mạng, đóng ứng dụng hoặc mở nhiều phiên nghe.
+- Ngôn ngữ hỗ trợ và quy trình tạo bản dịch, âm thanh.
+- Hình thức tích hợp thanh toán và môi trường triển khai.
+- Công nghệ sử dụng và phân công công việc cụ thể.
+
+### Kế hoạch tuần tiếp theo
+
+- Hoàn thiện danh sách yêu cầu và tiêu chí nghiệm thu.
+- Thiết kế cơ sở dữ liệu và các API chính.
+- Tạo cấu trúc dự án backend theo ba lớp.
+- Phân công người phụ trách, người kiểm tra và thời hạn cho từng nhiệm vụ.
+- Thiết lập CI ban đầu để kiểm tra mã nguồn.
+- Bắt đầu triển khai quản lý địa điểm và quy trình gửi, duyệt nội dung.
+
+## Đánh giá sau ba tuần
+
+Nhóm đã làm rõ định hướng sản phẩm: hệ thống thuyết minh đa ngôn ngữ theo GPS, có thu phí dựa trên số phút nghe thực tế và không yêu cầu người nghe đăng nhập. Giai đoạn tiếp theo tập trung chuyển các yêu cầu đã xác định thành thiết kế dữ liệu, API và chức năng backend có thể kiểm thử.
