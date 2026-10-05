@@ -1,0 +1,15 @@
+# Thu muc sinh ra khi build .NET
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# VS Code
+.vscode/
+
+# File he thong
+.DS_Store
+Thumbs.db
