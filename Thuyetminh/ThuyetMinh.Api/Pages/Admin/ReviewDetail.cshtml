@@ -1,0 +1,34 @@
+@page
+@model ThuyetMinh.Api.Pages.Admin.ReviewDetailModel
+@{
+    ViewData["Title"] = "Duyệt bài";
+}
+
+<h2>Duyệt bài #@Model.Submission.Id</h2>
+
+<table style="margin-bottom:20px;">
+    <tr><th>Quán hiện tại</th><td>@Model.Submission.Shop?.Name</td></tr>
+    <tr><th>Đề nghị đổi tên thành</th><td>@Model.Submission.Name</td></tr>
+    <tr><th>Địa chỉ</th><td>@Model.Submission.Address</td></tr>
+    <tr><th>Tọa độ</th><td>@Model.Submission.Latitude, @Model.Submission.Longitude</td></tr>
+    <tr><th>Bán kính</th><td>@Model.Submission.ActivationRadiusMeters m</td></tr>
+    <tr><th>Mô tả</th><td>@(Model.Submission.Description ?? "—")</td></tr>
+    <tr><th>Ảnh</th><td>@(Model.Submission.ImageUrlsRaw ?? "—")</td></tr>
+    <tr><th>Ngày gửi</th><td>@Model.Submission.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td></tr>
+</table>
+
+<form method="post">
+    <input type="hidden" asp-for="SubmissionId" />
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <p class="success">@Model.Message</p>
+    }
+
+    <label>Lý do từ chối (chỉ nhập khi từ chối)</label>
+    <textarea asp-for="RejectionReason" maxlength="1000"></textarea>
+
+    <button type="submit" name="action" value="approve" class="btn-success">Duyệt</button>
+    <button type="submit" name="action" value="reject" class="btn-danger">Từ chối</button>
+    <a class="btn btn-secondary" href="/Admin/ReviewList">Quay lại</a>
+</form>
