@@ -1,1 +1,10 @@
 /KiemTraNhanh/
+bin/
+obj/
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
+.vs/
+.idea/
+*.user

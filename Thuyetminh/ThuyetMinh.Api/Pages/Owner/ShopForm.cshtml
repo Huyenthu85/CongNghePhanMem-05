@@ -1,0 +1,45 @@
+@page
+@model ThuyetMinh.Api.Pages.Owner.ShopFormModel
+@{
+    ViewData["Title"] = "Thông tin quán";
+}
+
+<h2>Thông tin quán</h2>
+<p style="color:#666; font-size:14px;">
+    Mọi chỉnh sửa cần được quản trị viên duyệt trước khi công bố.
+</p>
+
+<form method="post">
+    <input type="hidden" asp-for="ShopId" />
+
+    <label>Tên quán *</label>
+    <input asp-for="Input.Name" required maxlength="200" />
+
+    <label>Địa chỉ *</label>
+    <input asp-for="Input.Address" required maxlength="500" />
+
+    <label>Vĩ độ *</label>
+    <input asp-for="Input.Latitude" type="number" step="any" required />
+
+    <label>Kinh độ *</label>
+    <input asp-for="Input.Longitude" type="number" step="any" required />
+
+    <label>Bán kính kích hoạt (mét) *</label>
+    <input asp-for="Input.ActivationRadiusMeters" type="number" min="1" max="5000" required />
+
+    <label>Mô tả</label>
+    <textarea asp-for="Input.Description" maxlength="4000"></textarea>
+
+    <label>Ảnh (mỗi dòng một URL)</label>
+    <textarea asp-for="Input.ImageUrlsText"
+              placeholder="https://example.com/a.jpg&#10;https://example.com/b.jpg"></textarea>
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <p class="success">@Model.Message</p>
+    }
+
+    <button type="submit" name="action" value="draft" class="btn-secondary">Lưu nháp</button>
+    <button type="submit" name="action" value="submit" class="btn-primary">Gửi duyệt</button>
+    <a class="btn btn-secondary" href="/Owner/ShopList">Quay lại</a>
+</form>
