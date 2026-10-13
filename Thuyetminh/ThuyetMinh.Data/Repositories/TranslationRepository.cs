@@ -1,38 +1,37 @@
+
+using Microsoft.EntityFrameworkCore;
 using ThuyetMinh.Data.Models;
 
 namespace ThuyetMinh.Data.Repositories
 {
     public class TranslationRepository
     {
-        private static readonly List<Translation> _translations = new();
-
+        private readonly AppDbContext _context;
+        public TranslationRepository(AppDbContext context)
+        {
+            _context = context;
+        }
         public List<Translation> GetAll()
         {
-            return _translations;
+            return _context.Translations.AsNoTracking().ToList();
         }
-
         public Translation? GetById(int id)
         {
-            return _translations.FirstOrDefault(x => x.Id == id);
+            return _context.Translations.AsNoTracking()
+                .FirstOrDefault(x => x.Id == id);
         }
-
         public Translation Add(Translation translation)
         {
-            translation.Id = _translations.Count + 1;
-            _translations.Add(translation);
-
+            _context.Translations.Add(translation);
+            _context.SaveChanges();
             return translation;
         }
-
-        public Translation? GetByPoiVersionLanguage(
-            int poiId,
-            int versionId,
-            int languageId)
+        public Translation? GetBySubmissionLanguage(long shopSubmissionId, int languageId)
         {
-            return _translations.FirstOrDefault(x =>
-                x.PoiId == poiId &&
-                x.VersionId == versionId &&
-                x.LanguageId == languageId);
+            return _context.Translations.AsNoTracking()
+                .FirstOrDefault(x =>
+                    x.ShopSubmissionId == shopSubmissionId &&
+                    x.LanguageId == languageId);
         }
     }
 }

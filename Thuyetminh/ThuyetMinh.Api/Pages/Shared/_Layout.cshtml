@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quán thuyết minh</title>
+    <link rel="stylesheet" href="~/css/app.css" />
+</head>
+<body>
+    <header>
+        <nav>
+            <strong>Quán thuyết minh</strong>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                @if (User.IsInRole("Owner"))
+                {
+                    <a href="/Owner/ShopList">Quán của tôi</a>
+                }
+                @if (User.IsInRole("Admin"))
+                {
+                    <a href="/Admin/ReviewList">Duyệt bài</a>
+                }
+                <span style="margin-left:auto; color:#bbb; font-size:13px;">
+                    Xin chào, @User.Identity.Name
+                </span>
+                <form method="post" asp-page="/Logout" style="display:inline;">
+                    <button type="submit" class="btn-secondary" style="margin:0;">
+                        Đăng xuất
+                    </button>
+                </form>
+            }
+        </nav>
+    </header>
+    <main>
+        @RenderBody()
+    </main>
+</body>
+</html>

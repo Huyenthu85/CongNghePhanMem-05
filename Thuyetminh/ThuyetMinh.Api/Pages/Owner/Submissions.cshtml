@@ -1,0 +1,57 @@
+@page
+@model ThuyetMinh.Api.Pages.Owner.ShopListModel
+@{
+    ViewData["Title"] = "Quán của tôi";
+}
+
+<h2>Quán của tôi</h2>
+
+@if (!Model.Shops.Any())
+{
+    <p>Bạn chưa có quán nào.</p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Tên quán</th>
+                <th>Địa chỉ</th>
+                <th>Bán kính (m)</th>
+                <th>Trạng thái</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var s in Model.Shops)
+        {
+            <tr>
+                <td>@s.Name</td>
+                <td>@s.Address</td>
+                <td>@s.ActivationRadiusMeters</td>
+                <td>
+                    @switch (s.PublishStatus)
+                    {
+                        case ThuyetMinh.Data.Models.PublishStatus.Draft:
+                            <span class="badge badge-draft">Nháp</span>
+                            break;
+                        case ThuyetMinh.Data.Models.PublishStatus.Pending:
+                            <span class="badge badge-pending">Chờ duyệt</span>
+                            break;
+                        case ThuyetMinh.Data.Models.PublishStatus.Approved:
+                            <span class="badge badge-approved">Đã duyệt</span>
+                            break;
+                        case ThuyetMinh.Data.Models.PublishStatus.Rejected:
+                            <span class="badge badge-rejected">Bị từ chối</span>
+                            break;
+                    }
+                </td>
+                <td>
+                    <a class="btn btn-primary" href="/Owner/ShopForm?id=@s.Id">Chỉnh sửa</a>
+                    <a class="btn btn-secondary" href="/Owner/Submissions?id=@s.Id">Bài gửi</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}

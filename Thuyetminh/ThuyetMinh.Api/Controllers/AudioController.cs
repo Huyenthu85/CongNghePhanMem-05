@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ThuyetMinh.Business.Services;
 
@@ -9,9 +10,9 @@ namespace ThuyetMinh.Api.Controllers
     {
         private readonly AudioService _audioService;
 
-        public AudioController()
+        public AudioController(AudioService audioService)
         {
-            _audioService = new AudioService();
+            _audioService = audioService;
         }
 
         [HttpGet]
@@ -47,11 +48,12 @@ namespace ThuyetMinh.Api.Controllers
             return Ok(audio);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult Create(
-            int translationId,
-            string filePath,
-            int durationSeconds)
+                    int translationId,
+                    string filePath,
+                    int durationSeconds)
         {
             var audio = _audioService.CreateAudio(
                 translationId,

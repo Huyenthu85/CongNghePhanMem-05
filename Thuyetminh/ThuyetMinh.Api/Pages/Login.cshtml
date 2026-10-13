@@ -1,0 +1,23 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<div class="login-box">
+    <h2>Đăng nhập</h2>
+    <form method="post">
+        <label>Tên đăng nhập</label>
+        <input asp-for="Username" required autofocus />
+
+        <label>Mật khẩu</label>
+        <input asp-for="Password" type="password" required />
+
+        @if (!string.IsNullOrEmpty(Model.Error))
+        {
+            <p class="error">@Model.Error</p>
+        }
+
+        <button type="submit" class="btn-primary">Đăng nhập</button>
+    </form>
+</div>

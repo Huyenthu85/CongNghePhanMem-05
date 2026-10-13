@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ThuyetMinh.Business.Services;
 
@@ -9,9 +10,9 @@ namespace ThuyetMinh.Api.Controllers
     {
         private readonly TranslationService _translationService;
 
-        public TranslationController()
+        public TranslationController(TranslationService translationService)
         {
-            _translationService = new TranslationService();
+            _translationService = translationService;
         }
 
         [HttpGet]
@@ -25,47 +26,40 @@ namespace ThuyetMinh.Api.Controllers
         public IActionResult GetById(int id)
         {
             var translation = _translationService.GetTranslationById(id);
-
             if (translation == null)
             {
                 return NotFound();
             }
-
             return Ok(translation);
         }
 
         [HttpGet("search")]
         public IActionResult GetTranslation(
-            int poiId,
-            int versionId,
+            long shopSubmissionId,
             int languageId)
         {
             var translation = _translationService.GetTranslation(
-                poiId,
-                versionId,
+                shopSubmissionId,
                 languageId);
-
             if (translation == null)
             {
                 return NotFound();
             }
-
             return Ok(translation);
         }
 
+
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult Create(
-            int poiId,
-            int versionId,
+            long shopSubmissionId,
             int languageId,
             string translatedText)
         {
             var translation = _translationService.CreateTranslation(
-                poiId,
-                versionId,
+                shopSubmissionId,
                 languageId,
                 translatedText);
-
             return Ok(translation);
         }
     }
