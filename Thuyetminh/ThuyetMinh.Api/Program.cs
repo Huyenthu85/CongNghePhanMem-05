@@ -11,12 +11,30 @@ using ThuyetMinh.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+var connectionString = builder.Configuration.GetConnectionString("Default");
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException("Chua cau hinh SQLite.");
+var databasePath = Path.Combine(builder.Environment.ContentRootPath, "congnghephanmem.db");
+var sqliteConnection = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connectionString)
+{
+    DataSource = databasePath
+};
 builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+    o.UseSqlite(sqliteConnection.ToString()));
+
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IShopRepository, ShopRepository>();
 builder.Services.AddScoped<IShopSubmissionRepository, ShopSubmissionRepository>();
+builder.Services.AddScoped<TranslationRepository>();
+builder.Services.AddScoped<TranslationService>();
+builder.Services.AddScoped<LanguageRepository>();
+builder.Services.AddScoped<LanguageService>();
+builder.Services.AddScoped<AudioRepository>();
+builder.Services.AddScoped<AudioService>();
+builder.Services.AddScoped<ProcessingJobRepository>();
+builder.Services.AddScoped<ProcessingJobService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IShopService, ShopService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
@@ -105,7 +123,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 
     if (!db.Users.Any())
     {

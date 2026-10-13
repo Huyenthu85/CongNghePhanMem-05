@@ -10,6 +10,10 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Shop> Shops => Set<Shop>();
     public DbSet<ShopSubmission> ShopSubmissions => Set<ShopSubmission>();
+    public DbSet<Language> Languages => Set<Language>();
+    public DbSet<Translation> Translations => Set<Translation>();
+    public DbSet<Audio> Audios => Set<Audio>();
+    public DbSet<ProcessingJob> ProcessingJobs => Set<ProcessingJob>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -38,5 +42,51 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(x => x.ReviewedById)
             .OnDelete(DeleteBehavior.Restrict);
+        b.Entity<Language>()
+            .HasIndex(x => x.Code)
+            .IsUnique();
+
+        b.Entity<Translation>()
+            .HasOne(x => x.ShopSubmission)
+            .WithMany()
+            .HasForeignKey(x => x.ShopSubmissionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<Translation>()
+            .HasOne(x => x.Language)
+            .WithMany()
+            .HasForeignKey(x => x.LanguageId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<Translation>()
+            .HasIndex(x => new { x.ShopSubmissionId, x.LanguageId })
+            .IsUnique();
+
+        b.Entity<Audio>()
+            .HasOne<Translation>()
+            .WithMany()
+            .HasForeignKey(x => x.TranslationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<ProcessingJob>()
+            .HasOne(x => x.ShopSubmission)
+            .WithMany()
+            .HasForeignKey(x => x.ShopSubmissionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<ProcessingJob>()
+            .HasOne(x => x.Language)
+            .WithMany()
+            .HasForeignKey(x => x.LanguageId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<Language>().HasData(
+            new Language { Id = 1, Code = "vi", Name = "Tiếng Việt", IsActive = true },
+            new Language { Id = 2, Code = "en", Name = "Tiếng Anh", IsActive = true },
+            new Language { Id = 3, Code = "zh", Name = "Tiếng Trung", IsActive = true },
+            new Language { Id = 4, Code = "km", Name = "Tiếng Khmer", IsActive = true }
+        );
+
+
     }
 }

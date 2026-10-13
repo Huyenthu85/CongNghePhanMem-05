@@ -9,10 +9,12 @@ namespace ThuyetMinh.Api.Controllers
     {
         private readonly LanguageService _languageService;
 
-        public LanguageController()
+
+        public LanguageController(LanguageService languageService)
         {
-            _languageService = new LanguageService();
+            _languageService = languageService;
         }
+
 
         [HttpGet]
         public IActionResult GetAll()
