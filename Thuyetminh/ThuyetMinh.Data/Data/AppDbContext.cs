@@ -14,6 +14,8 @@ public class AppDbContext : DbContext
     public DbSet<Translation> Translations => Set<Translation>();
     public DbSet<Audio> Audios => Set<Audio>();
     public DbSet<ProcessingJob> ProcessingJobs => Set<ProcessingJob>();
+    public DbSet<AnonymousVisitor> AnonymousVisitors => Set<AnonymousVisitor>();
+    public DbSet<PaymentOrder> PaymentOrders => Set<PaymentOrder>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -79,6 +81,29 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(x => x.LanguageId)
             .OnDelete(DeleteBehavior.Restrict);
+            
+        b.Entity<AnonymousVisitor>()
+            .HasIndex(x => x.TokenHash)
+            .IsUnique();
+
+        b.Entity<PaymentOrder>()
+            .HasOne(x => x.AnonymousVisitor)
+            .WithMany()
+            .HasForeignKey(x => x.AnonymousVisitorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<PaymentOrder>()
+            .HasIndex(x => x.OrderCode)
+            .IsUnique();
+
+        b.Entity<PaymentOrder>()
+            .HasIndex(x => x.ProviderTransactionId)
+            .IsUnique();
+
+        b.Entity<PaymentOrder>()
+            .Property(x => x.Status)
+            .HasConversion<string>();
+
 
         b.Entity<Language>().HasData(
             new Language { Id = 1, Code = "vi", Name = "Tiếng Việt", IsActive = true },

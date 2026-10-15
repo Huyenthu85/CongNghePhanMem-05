@@ -1,0 +1,647 @@
+
+/* ==================================================
+   THUYET MINH TU DONG DA NGON NGU
+   PAYMENT CHECKOUT - RESPONSIVE
+   ================================================== */
+
+/* CAU HINH MAU SAC */
+:root {
+    --primary: #07816f;
+    --primary-dark: #056857;
+    --primary-soft: #e8f6f1;
+    --navy: #293e50;
+    --text: #173447;
+    --muted: #607582;
+    --border: #dce9e5;
+    --background: #f2f8f6;
+    --white: #ffffff;
+    --warning: #a47114;
+    --warning-bg: #fff5e3;
+    --shadow: 0 12px 36px rgba(21, 58, 51, 0.07);
+}
+
+/* RESET */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+    margin: 0;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--text);
+    background: linear-gradient(135deg, #f0f8f4, #f6f9fa);
+}
+
+a {
+    text-decoration: none;
+}
+
+/* HEADER */
+.site-header {
+    width: 100%;
+    height: 60px;
+    background: var(--navy);
+    color: var(--white);
+}
+
+.site-header-inner {
+    width: 100%;
+    max-width: 1120px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.site-brand {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    color: var(--white);
+}
+
+.site-brand-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #087f70, #12aa8a);
+    color: var(--white);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.site-brand-name {
+    font-size: 17px;
+    line-height: 1.3;
+    font-weight: 700;
+}
+
+.site-header-label {
+    color: #cbd9e1;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+/* KHUNG TRANG */
+.payment-page {
+    min-height: calc(100vh - 60px);
+    min-height: calc(100dvh - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.payment-container {
+    width: 100%;
+    max-width: 940px;
+    margin: 0 auto;
+}
+
+/* TIEU DE */
+.payment-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.payment-heading {
+    min-width: 0;
+}
+
+.payment-title h1 {
+    margin: 0 0 5px;
+    color: var(--text);
+    font-size: clamp(21px, 2.5vw, 26px);
+    font-weight: 750;
+    line-height: 1.25;
+}
+
+.payment-title p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.back-link {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 9px 15px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--white);
+    color: var(--primary-dark);
+    font-size: 13px;
+    font-weight: 700;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.back-link:hover {
+    background: var(--primary-soft);
+    border-color: #a4d4c6;
+}
+
+.back-link:focus-visible,
+.site-brand:focus-visible {
+    outline: 3px solid #64cbb1;
+    outline-offset: 3px;
+}
+
+/* BO CUC HAI COT */
+.payment-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+    gap: 18px;
+}
+
+/* THE CHUNG */
+.card {
+    min-width: 0;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--white);
+    box-shadow: var(--shadow);
+}
+
+.section-label {
+    display: inline-block;
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+}
+
+/* THE GOI NGHE */
+.package-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.price-block {
+    margin: 23px 0 23px;
+}
+
+.price {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: var(--primary);
+    font-size: clamp(34px, 4vw, 44px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.7px;
+}
+
+.price small {
+    color: var(--primary);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.duration {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* QUYEN LOI */
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+}
+
+.feature-list li {
+    position: relative;
+    padding-left: 26px;
+    margin-bottom: 13px;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.feature-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--primary);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+/* GHI CHU */
+.note-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: auto;
+    padding: 13px 14px;
+    border: 1px solid #d4eee4;
+    border-radius: 12px;
+    background: #edf8f4;
+    color: #47695e;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.note-icon {
+    flex-shrink: 0;
+    color: var(--primary);
+    font-size: 17px;
+    line-height: 1.2;
+}
+
+/* THE THANH TOAN */
+.qr-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.qr-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.payment-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-height: 25px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--warning-bg);
+    color: var(--warning);
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* QR */
+.qr-frame {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 16px 0 18px;
+}
+
+.qr-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: min(100%, 190px);
+    aspect-ratio: 1 / 1;
+    padding: 14px;
+    border: 1.5px dashed #a7cfc3;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #ffffff, #f0faf6);
+    text-align: center;
+}
+
+.qr-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 65px;
+    height: 65px;
+    border-radius: 15px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 43px;
+    line-height: 1;
+}
+
+.qr-placeholder strong {
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.qr-placeholder small {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* THONG TIN THANH TOAN */
+.order-info {
+    display: grid;
+    gap: 11px;
+    padding-top: 13px;
+    border-top: 1px solid var(--border);
+}
+
+.info-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.info-row span {
+    color: var(--muted);
+}
+
+.info-row strong {
+    max-width: 65%;
+    color: var(--text);
+    font-weight: 700;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.info-row .status.pending {
+    color: var(--warning);
+}
+
+/* THONG BAO QR */
+.qr-note {
+    margin: 15px 0 0;
+    padding: 11px 12px;
+    border-radius: 10px;
+    background: #f6f9f8;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+/* FOOTER */
+.payment-footer {
+    margin: 15px 0 0;
+    color: #87999e;
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* TABLET */
+@media (max-width: 900px) {
+    .payment-page {
+        padding: 18px;
+    }
+
+    .payment-grid {
+        gap: 14px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .price {
+        font-size: 36px;
+    }
+}
+
+/* DIEN THOAI */
+@media (max-width: 700px) {
+    .site-header {
+        height: 56px;
+    }
+
+    .site-header-inner {
+        padding: 0 14px;
+    }
+
+    .site-brand-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        font-size: 18px;
+    }
+
+    .site-brand-name {
+        font-size: 13px;
+    }
+
+    .site-header-label {
+        display: none;
+    }
+
+    .payment-page {
+        min-height: calc(100dvh - 56px);
+        align-items: flex-start;
+        padding: 16px 12px 24px;
+    }
+
+    .payment-container {
+        max-width: 480px;
+    }
+
+    .payment-title {
+        gap: 10px;
+        margin-bottom: 13px;
+    }
+
+    .payment-title h1 {
+        font-size: 20px;
+    }
+
+    .payment-title p {
+        font-size: 12px;
+    }
+
+    .back-link {
+        min-height: 44px;
+        padding: 9px 10px;
+        font-size: 12px;
+    }
+
+    .payment-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .card {
+        padding: 17px;
+        border-radius: 16px;
+    }
+
+    .section-label {
+        font-size: 10px;
+    }
+
+    .price-block {
+        margin: 12px 0 14px;
+    }
+
+    .price {
+        font-size: 34px;
+        gap: 6px;
+    }
+
+    .price small {
+        font-size: 14px;
+    }
+
+    .duration {
+        margin-top: 5px;
+        font-size: 13px;
+    }
+
+    .feature-list {
+        margin-bottom: 12px;
+    }
+
+    .feature-list li {
+        padding-left: 22px;
+        margin-bottom: 7px;
+        font-size: 13px;
+    }
+
+    .feature-list li::before {
+        font-size: 15px;
+    }
+
+    .note-box {
+        padding: 10px 12px;
+        font-size: 11px;
+    }
+
+    .qr-frame {
+        margin: 12px 0 14px;
+    }
+
+    .qr-placeholder {
+        width: min(100%, 175px);
+        padding: 12px;
+        border-radius: 13px;
+    }
+
+    .qr-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 36px;
+    }
+
+    .qr-placeholder small {
+        font-size: 10px;
+    }
+
+    .order-info {
+        padding-top: 11px;
+        gap: 8px;
+    }
+
+    .info-row {
+        font-size: 12px;
+    }
+
+    .qr-note {
+        margin-top: 11px;
+        padding: 10px;
+        font-size: 11px;
+    }
+
+    .payment-footer {
+        margin-top: 12px;
+        font-size: 10px;
+    }
+}
+
+/* DIEN THOAI NHO */
+@media (max-width: 360px) {
+    .payment-page {
+        padding: 12px 8px 18px;
+    }
+
+    .site-brand-name {
+        font-size: 12px;
+    }
+
+    .payment-title h1 {
+        font-size: 18px;
+    }
+
+    .card {
+        padding: 13px;
+    }
+
+    .price {
+        font-size: 30px;
+    }
+}
+
+/* DESKTOP CO CHIEU CAO THAP */
+@media (min-width: 701px) and (max-height: 700px) {
+    .payment-page {
+        padding: 12px;
+    }
+
+    .payment-title {
+        margin-bottom: 10px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    .price-block {
+        margin: 13px 0;
+    }
+
+    .feature-list {
+        margin-bottom: 12px;
+    }
+
+    .feature-list li {
+        margin-bottom: 8px;
+    }
+
+    .qr-frame {
+        margin: 9px 0;
+    }
+
+    .qr-placeholder {
+        width: 160px;
+    }
+
+    .payment-footer {
+        margin-top: 9px;
+    }
+}
+
+/* HO TRO GIAM CHUYEN DONG */
+@media (prefers-reduced-motion: reduce) {
+    .back-link {
+        transition: none;
+    }
+}
