@@ -16,6 +16,9 @@ public class AppDbContext : DbContext
     public DbSet<ProcessingJob> ProcessingJobs => Set<ProcessingJob>();
     public DbSet<AnonymousVisitor> AnonymousVisitors => Set<AnonymousVisitor>();
     public DbSet<PaymentOrder> PaymentOrders => Set<PaymentOrder>();
+    public DbSet<ListeningBalance> ListeningBalances => Set<ListeningBalance>();
+    public DbSet<ListeningSession> ListeningSessions => Set<ListeningSession>();
+    public DbSet<ListeningTransaction> ListeningTransactions => Set<ListeningTransaction>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -81,7 +84,7 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(x => x.LanguageId)
             .OnDelete(DeleteBehavior.Restrict);
-            
+
         b.Entity<AnonymousVisitor>()
             .HasIndex(x => x.TokenHash)
             .IsUnique();
@@ -104,6 +107,90 @@ public class AppDbContext : DbContext
             .Property(x => x.Status)
             .HasConversion<string>();
 
+        b.Entity<ListeningBalance>()
+            .HasOne(x => x.AnonymousVisitor)
+            .WithMany()
+            .HasForeignKey(x => x.AnonymousVisitorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<ListeningBalance>()
+            .HasIndex(x => x.AnonymousVisitorId)
+            .IsUnique();
+
+        b.Entity<ListeningBalance>()
+            .ToTable(t => t.HasCheckConstraint(
+                "CK_ListeningBalance_RemainingSeconds",
+                "RemainingSeconds >= 0"));
+
+        b.Entity<ListeningSession>()
+            .HasOne(x => x.AnonymousVisitor)
+            .WithMany()
+            .HasForeignKey(x => x.AnonymousVisitorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<ListeningSession>()
+            .HasOne(x => x.Shop)
+            .WithMany()
+            .HasForeignKey(x => x.ShopId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<ListeningSession>()
+            .HasOne(x => x.Audio)
+            .WithMany()
+            .HasForeignKey(x => x.AudioId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<ListeningSession>()
+            .Property(x => x.Status)
+            .HasConversion<string>();
+
+        b.Entity<ListeningSession>()
+            .HasIndex(x => x.AnonymousVisitorId)
+            .IsUnique()
+            .HasFilter("\"Status\" <> 'Ended'");
+
+        b.Entity<ListeningSession>()
+            .ToTable(t => t.HasCheckConstraint(
+                "CK_ListeningSession_ChargedSeconds",
+                "ChargedSeconds >= 0"));
+
+        b.Entity<ListeningTransaction>()
+            .HasOne(x => x.AnonymousVisitor)
+            .WithMany()
+            .HasForeignKey(x => x.AnonymousVisitorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<ListeningTransaction>()
+            .HasOne(x => x.PaymentOrder)
+            .WithMany()
+            .HasForeignKey(x => x.PaymentOrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<ListeningTransaction>()
+            .HasOne(x => x.ListeningSession)
+            .WithMany()
+            .HasForeignKey(x => x.ListeningSessionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        b.Entity<ListeningTransaction>()
+            .Property(x => x.Type)
+            .HasConversion<string>();
+
+        b.Entity<ListeningTransaction>()
+            .HasIndex(x => x.PaymentOrderId)
+            .IsUnique()
+            .HasFilter("\"PaymentOrderId\" IS NOT NULL");
+
+        b.Entity<ListeningTransaction>()
+            .ToTable(t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_ListeningTransaction_BalanceAfter",
+                    "BalanceAfterSeconds >= 0");
+                t.HasCheckConstraint(
+                    "CK_ListeningTransaction_Change",
+                    "(\"Type\" = 'PaymentCredit' AND \"ChangeSeconds\" > 0 AND \"PaymentOrderId\" IS NOT NULL AND \"ListeningSessionId\" IS NULL) OR (\"Type\" = 'ListeningDebit' AND \"ChangeSeconds\" < 0 AND \"ListeningSessionId\" IS NOT NULL AND \"PaymentOrderId\" IS NULL)");
+            });
 
         b.Entity<Language>().HasData(
             new Language { Id = 1, Code = "vi", Name = "Tiếng Việt", IsActive = true },
