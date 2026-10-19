@@ -1,0 +1,156 @@
+@page
+@model ThuyetMinh.Api.Pages.Narration.IndexModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Nghe thuyết minh";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nghe thuyết minh - Thuyết Minh Du Lịch</title>
+    <link rel="stylesheet" href="~/css/narration.css" asp-append-version="true" />
+</head>
+<body>
+<div class="tour-page">
+
+    <header class="tour-header">
+        <a class="tour-logo" href="/Narration">
+            <span class="logo-icon">♫</span>
+            <span>Thuyết Minh Du Lịch</span>
+        </a>
+
+        <nav class="tour-nav">
+            <a href="#intro">Giới thiệu</a>
+            <a href="#explore">Khám phá</a>
+            <a href="#audio">Thuyết minh</a>
+        </nav>
+
+        <span class="gps-status">
+            <span class="gps-dot"></span>
+            GPS chưa kết nối
+        </span>
+    </header>
+
+    <div class="breadcrumb">
+        Trang chủ <span>›</span> Địa điểm tham quan
+        <span>›</span> Nghe thuyết minh
+    </div>
+
+    <main class="narration-main">
+
+        <section class="map-section" id="intro">
+            <div class="map-topbar">
+                <div>
+                    <span class="section-label">KHÁM PHÁ XUNG QUANH</span>
+                    <h1>Bản đồ địa điểm</h1>
+                    <p>Xem vị trí và khám phá khu vực tham quan.</p>
+                </div>
+                <span class="map-status">
+                    <span class="gps-dot"></span>
+                    Bản đồ minh họa
+                </span>
+            </div>
+
+            <div class="map-frame">
+                <iframe
+                    title="Bản đồ địa điểm tham quan"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=106.65%2C10.75%2C106.73%2C10.81&amp;layer=mapnik&amp;marker=10.7769%2C106.7009"
+                    loading="lazy">
+                </iframe>
+            </div>
+
+            <p class="map-note">
+                Vị trí đang hiển thị là vị trí minh họa tại TP. Hồ Chí Minh.
+            </p>
+        </section>
+
+        <section class="place-layout" id="explore">
+
+            <div class="place-photo">
+                <img
+                    src="https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&amp;fit=crop&amp;w=800&amp;q=85"
+                    alt="Không gian quán cà phê" />
+
+                <div class="photo-caption">
+                    <span>ĐIỂM ĐẾN CỦA BẠN</span>
+                    <h2>Quán cà phê mẫu</h2>
+                </div>
+            </div>
+
+            <section class="tour-details">
+                <span class="section-label">ĐỊA ĐIỂM THAM QUAN</span>
+
+                <h2>Quán cà phê mẫu</h2>
+
+                <p class="tour-location">
+                    <span>⌖</span> Địa chỉ sẽ được cập nhật
+                </p>
+
+                <div class="language-box">
+                    <label for="language">Ngôn ngữ thuyết minh</label>
+                    <select id="language" name="language">
+                        <option value="vi">Tiếng Việt</option>
+                        <option value="en">English</option>
+                        <option value="zh">Tiếng Trung</option>
+                        <option value="km">Tiếng Khmer</option>
+                    </select>
+                </div>
+
+                <div class="tour-description">
+                    <h3>Giới thiệu địa điểm</h3>
+                    <p>
+                        Chào mừng bạn đến với quán cà phê.
+                        Hãy nghe thuyết minh để khám phá không gian,
+                        lịch sử và những nét đặc trưng của địa điểm này.
+                    </p>
+                </div>
+
+                <div class="gps-notice">
+                    <span class="gps-notice-icon">⌖</span>
+                    <div>
+                        <strong>Trạng thái vị trí</strong>
+                        <p>
+                            GPS chưa kết nối. Vị trí thực tế sẽ được cập nhật
+                            khi tích hợp chức năng định vị.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+        </section>
+    </main>
+
+    <footer class="audio-dock" id="audio">
+        <div class="dock-title">
+            <strong>Quán cà phê mẫu</strong>
+            <span>Thuyết minh du lịch</span>
+        </div>
+
+        <div class="audio-controls">
+            <audio controls preload="none">
+                Trình duyệt của bạn không hỗ trợ phát âm thanh.
+            </audio>
+            <span class="audio-status">Chưa kết nối file âm thanh</span>
+        </div>
+
+        <div class="dock-right">
+            <div class="remaining-time">
+                <span class="clock-icon">◷</span>
+                <div>
+                    <small>THỜI GIAN CÒN LẠI</small>
+                    <strong id="remaining-time">Chờ API</strong>
+                </div>
+            </div>
+
+            <a class="payment-link" href="#" id="payment-link">
+                Thanh toán QR
+            </a>
+        </div>
+    </footer>
+
+</div>
+</body>
+</html>
