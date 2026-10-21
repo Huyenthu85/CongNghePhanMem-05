@@ -34,11 +34,6 @@
         </span>
     </header>
 
-    <div class="breadcrumb">
-        Trang chủ <span>›</span> Địa điểm tham quan
-        <span>›</span> Nghe thuyết minh
-    </div>
-
     <main class="narration-main">
 
         <section class="map-section" id="intro">
@@ -101,10 +96,8 @@
 
                 <div class="tour-description">
                     <h3>Giới thiệu địa điểm</h3>
-                    <p>
-                        Chào mừng bạn đến với quán cà phê.
-                        Hãy nghe thuyết minh để khám phá không gian,
-                        lịch sử và những nét đặc trưng của địa điểm này.
+                    <p id="translation-text">
+                        Chọn ngôn ngữ để xem nội dung thuyết minh.
                     </p>
                 </div>
 
@@ -130,9 +123,9 @@
         </div>
 
         <div class="audio-controls">
-            <audio controls preload="none">
-                Trình duyệt của bạn không hỗ trợ phát âm thanh.
-            </audio>
+        <audio id="narration-audio" controls preload="none">
+            Trình duyệt của bạn không hỗ trợ phát âm thanh.
+        </audio>
             <span class="audio-status">Chưa kết nối file âm thanh</span>
         </div>
 
@@ -151,6 +144,158 @@
         </div>
     </footer>
 
+
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+    const languageSelect = document.getElementById("language");
+    const translationText = document.getElementById("translation-text");
+    const audioPlayer = document.getElementById("narration-audio");
+    const audioStatus = document.querySelector(".audio-status");
+    const remainingTime = document.getElementById("remaining-time");
+
+    let languages = [];
+
+    async function loadNarration() {
+        audioPlayer.pause();
+        audioPlayer.removeAttribute("src");
+        audioPlayer.load();
+
+        translationText.textContent = "Đang tải bản dịch...";
+        audioStatus.textContent = "Đang tải âm thanh...";
+        if (remainingTime) remainingTime.textContent = "Chưa có dữ liệu";
+
+        const params = new URLSearchParams(window.location.search);
+        const submissionId = Number(params.get("shopSubmissionId"));
+
+        if (!submissionId) {
+            translationText.textContent =
+                "Chưa có hồ sơ địa điểm để tải bản dịch.";
+            audioStatus.textContent = "Chưa có dữ liệu âm thanh";
+            return;
+        }
+
+        const language = languages.find(
+            item => item.code === languageSelect.value
+        );
+
+        if (!language) {
+            translationText.textContent = "Vui lòng chọn ngôn ngữ.";
+            audioStatus.textContent = "Chưa chọn ngôn ngữ";
+            return;
+        }
+
+        try {
+            const url =
+                `/api/Translation/search?shopSubmissionId=${submissionId}` +
+                `&languageId=${language.id}`;
+
+            const response = await fetch(url);
+
+            if (response.status === 404) {
+                translationText.textContent =
+                    "Chưa có bản dịch cho ngôn ngữ này.";
+                audioStatus.textContent = "Chưa có bản dịch";
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error("Không tải được bản dịch.");
+            }
+
+            const translation = await response.json();
+
+            translationText.textContent =
+                translation.translatedText || "Bản dịch chưa có nội dung.";
+
+            const audioResponse = await fetch(
+                `/api/Audio/translation/${translation.id}`
+            );
+
+            if (audioResponse.status === 404) {
+                audioStatus.textContent = "Chưa có file âm thanh";
+                return;
+            }
+
+            if (!audioResponse.ok) {
+                throw new Error("Không tải được thông tin audio.");
+            }
+
+            const audio = await audioResponse.json();
+
+            if (!audio.filePath) {
+                audioStatus.textContent = "Chưa có file âm thanh";
+                return;
+            }
+
+            let audioUrl = audio.filePath;
+
+            if (!/^https?:\/\//i.test(audioUrl) &&
+                !audioUrl.startsWith("/")) {
+                audioUrl = "/" + audioUrl;
+            }
+
+            audioPlayer.src = audioUrl;
+            audioPlayer.load();
+
+            audioStatus.textContent = "Đã tải thông tin audio";
+
+            if (remainingTime) {
+                remainingTime.textContent =
+                    `${audio.durationSeconds || 0} giây`;
+            }
+        } catch (error) {
+            console.error(error);
+            translationText.textContent =
+                "Không thể tải dữ liệu thuyết minh.";
+            audioStatus.textContent = "Lỗi kết nối API";
+        }
+    }
+
+    try {
+        const response = await fetch("/api/Language");
+
+        if (!response.ok) {
+            throw new Error("Không tải được danh sách ngôn ngữ.");
+        }
+
+        const data = await response.json();
+        languages = data.filter(item => item.isActive);
+
+        languageSelect.innerHTML = "";
+
+        languages.forEach(language => {
+            const option = document.createElement("option");
+            option.value = language.code;
+            option.textContent = language.name;
+            languageSelect.appendChild(option);
+        });
+
+        if (languages.length === 0) {
+            languageSelect.innerHTML =
+                '<option value="">Chưa có ngôn ngữ</option>';
+            translationText.textContent = "Chưa có ngôn ngữ khả dụng.";
+            return;
+        }
+
+        languageSelect.value = languages.some(item => item.code === "vi")
+            ? "vi"
+            : languages[0].code;
+
+        languageSelect.addEventListener("change", loadNarration);
+
+        await loadNarration();
+    } catch (error) {
+        console.error(error);
+        languageSelect.innerHTML =
+            '<option value="">Không tải được ngôn ngữ</option>';
+        translationText.textContent = "Không kết nối được API ngôn ngữ.";
+        audioStatus.textContent = "Lỗi kết nối API";
+    }
+});
+
+</script>
+
 </body>
 </html>

@@ -47,20 +47,43 @@ namespace ThuyetMinh.Api.Controllers
 
             return Ok(audio);
         }
+        
+[Authorize(Roles = "Admin")]
+[HttpPost]
+public IActionResult Create(
+    int translationId,
+    string filePath,
+    int durationSeconds)
+{
+    if (translationId <= 0)
+    {
+        return BadRequest("ID bản dịch không hợp lệ.");
+    }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        public IActionResult Create(
-                    int translationId,
-                    string filePath,
-                    int durationSeconds)
-        {
-            var audio = _audioService.CreateAudio(
-                translationId,
-                filePath,
-                durationSeconds);
+    if (string.IsNullOrWhiteSpace(filePath))
+    {
+        return BadRequest("Đường dẫn âm thanh không được để trống.");
+    }
 
-            return Ok(audio);
-        }
+    if (durationSeconds <= 0)
+    {
+        return BadRequest("Thời lượng âm thanh phải lớn hơn 0.");
+    }
+
+    try
+    {
+        var audio = _audioService.CreateAudio(
+            translationId,
+            filePath,
+            durationSeconds);
+
+        return Ok(audio);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { error = ex.Message });
+    }
+}
+
     }
 }

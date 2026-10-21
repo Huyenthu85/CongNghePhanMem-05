@@ -47,20 +47,38 @@ namespace ThuyetMinh.Api.Controllers
             }
             return Ok(translation);
         }
+        
+[Authorize(Roles = "Admin")]
+[HttpPost]
+public IActionResult Create(
+    long shopSubmissionId,
+    int languageId,
+    string translatedText)
+{
+    if (shopSubmissionId <= 0 || languageId <= 0)
+    {
+        return BadRequest("ID hồ sơ hoặc ngôn ngữ không hợp lệ.");
+    }
 
+    if (string.IsNullOrWhiteSpace(translatedText))
+    {
+        return BadRequest("Nội dung bản dịch không được để trống.");
+    }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        public IActionResult Create(
-            long shopSubmissionId,
-            int languageId,
-            string translatedText)
-        {
-            var translation = _translationService.CreateTranslation(
-                shopSubmissionId,
-                languageId,
-                translatedText);
-            return Ok(translation);
-        }
+    try
+    {
+        var translation = _translationService.CreateTranslation(
+            shopSubmissionId,
+            languageId,
+            translatedText);
+
+        return Ok(translation);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { error = ex.Message });
+    }
+}
+
     }
 }
