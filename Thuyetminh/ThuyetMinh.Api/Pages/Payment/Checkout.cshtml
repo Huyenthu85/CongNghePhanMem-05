@@ -1,4 +1,3 @@
-
 @page "/payment"
 @model ThuyetMinh.Api.Pages.Payment.CheckoutModel
 @{
@@ -7,6 +6,7 @@
 }
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -14,6 +14,7 @@
     <title>Thanh toán | Thuyết minh tự động đa ngôn ngữ</title>
     <link rel="stylesheet" href="/css/payment.css" />
 </head>
+
 <body>
     <header class="site-header">
         <div class="site-header-inner">
@@ -26,13 +27,13 @@
     </header>
 
     <div class="payment-page">
-        <main class="payment-container">
+        <main class="payment-container" data-demo-qr="@Model.ShowDemoControls">
             <div class="payment-title">
                 <div class="payment-heading">
                     <h1>Thanh toán gói nghe</h1>
                     <p>Thanh toán một lần để nhận 15 phút thuyết minh.</p>
                 </div>
-                <a href="/" class="back-link">← Quay lại</a>
+                <a href="/Narration" class="back-link">← Vào ứng dụng</a>
             </div>
 
             <div class="payment-grid">
@@ -67,10 +68,11 @@
                 <section class="card qr-card" aria-labelledby="qr-heading">
                     <div class="qr-top">
                         <span class="section-label" id="qr-heading">THANH TOÁN BẰNG QR</span>
-                        <span class="payment-status">Chưa tạo đơn</span>
+                        <span class="payment-status" id="payment-status">Chưa tạo đơn</span>
                     </div>
 
                     <div class="qr-frame">
+                        <canvas id="demo-qr-canvas" hidden aria-label="QR thanh toán mô phỏng"></canvas>
                         <div class="qr-placeholder" aria-label="Chưa có mã QR thanh toán">
                             <div class="qr-icon" aria-hidden="true">▦</div>
                             <strong>Mã QR thanh toán</strong>
@@ -82,7 +84,8 @@
                         <div class="info-row">
                             <span>Số tiền thanh toán</span>
                             <strong>
-                                @Model.AmountVnd.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) VNĐ
+                                @Model.AmountVnd.ToString("N0",
+                                System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) VNĐ
                             </strong>
                         </div>
                         <div class="info-row">
@@ -91,14 +94,41 @@
                         </div>
                         <div class="info-row">
                             <span>Trạng thái đơn</span>
-                            <strong class="status pending">Chưa tạo đơn</strong>
+                            <strong class="status pending" id="order-status">Chưa tạo đơn</strong>
                         </div>
                     </div>
 
+                   
+                    <div class="payment-actions">
+                        <button type="button" id="create-order-btn" class="payment-primary-btn">
+                            Tạo đơn thanh toán
+                        </button>
+                        <a href="/Narration" id="enter-app-btn" class="payment-primary-btn payment-enter-btn" hidden>
+                            Vào ứng dụng thuyết minh
+                        </a>
+                    </div>
+                    @if (Model.ShowDemoControls)
+                    {
+                        <form id="demo-payment-form" class="demo-payment-form" onsubmit="return false;">
+                            @Html.AntiForgeryToken()
+                            <div class="demo-qr-actions">
+                                <input type="url" id="demo-lan-origin"
+                                       placeholder="https://ten-ngau-nhien.trycloudflare.com"
+                                       aria-label="Địa chỉ HTTPS công khai từ Cloudflare Tunnel" />
+                                <button type="button" id="demo-qr-btn" class="payment-primary-btn">
+                                    Tạo QR thanh toán (DEMO)
+                                </button>
+                            </div>
+                            <small id="demo-qr-instruction" class="demo-qr-instruction" hidden></small>
+                        </form>
+                    }
+                    <p id="payment-feedback" class="payment-feedback" role="status" aria-live="polite"></p>
+                    <p id="payment-order-code" class="payment-order-code" hidden></p>
                     <p class="qr-note">
-                        Mã QR sẽ xuất hiện sau khi hệ thống tích hợp phương thức thanh toán.
-                        Chưa có giao dịch nào được tạo.
+                        Chế độ mô phỏng: chưa liên kết ngân hàng, không phát sinh giao dịch tiền thật.
+                        QR được Admin tạo để trình diễn, điện thoại quét sẽ tự mô phỏng giao dịch.
                     </p>
+
                 </section>
             </div>
 
@@ -107,5 +137,7 @@
             </p>
         </main>
     </div>
+<script src="/js/demo-qr-vendor.js" defer></script>
+    <script src="/js/payment.js" defer></script>
 </body>
 </html>

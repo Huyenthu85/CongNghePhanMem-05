@@ -13,7 +13,8 @@
     <title>Nghe thuyết minh - Thuyết Minh Du Lịch</title>
     <link rel="stylesheet" href="~/css/narration.css" asp-append-version="true" />
 </head>
-<body>
+<body data-shop-id="@Model.ShopId">
+@Html.AntiForgeryToken()
 <div class="tour-page">
 
     <header class="tour-header">
@@ -133,7 +134,13 @@
             <audio controls preload="none">
                 Trình duyệt của bạn không hỗ trợ phát âm thanh.
             </audio>
-            <span class="audio-status">Chưa kết nối file âm thanh</span>
+            <span class="audio-status" id="audio-status">MP3 chưa kết nối; có thể nghe giọng trình duyệt (demo).</span>
+            <button type="button" id="narration-demo-play" class="demo-speech-btn">
+                Nghe giới thiệu (giọng trình duyệt)
+            </button>
+            <button type="button" id="narration-demo-pause" class="demo-speech-btn" hidden>
+                Tạm dừng
+            </button>
         </div>
 
         <div class="dock-right">
@@ -141,16 +148,17 @@
                 <span class="clock-icon">◷</span>
                 <div>
                     <small>THỜI GIAN CÒN LẠI</small>
-                    <strong id="remaining-time">Chờ API</strong>
+                    <strong id="remaining-time">@(Model.RemainingSeconds / 60):@((Model.RemainingSeconds % 60).ToString("D2"))</strong>
                 </div>
             </div>
 
-            <a class="payment-link" href="#" id="payment-link">
+            <a class="payment-link" href="/payment" id="payment-link">
                 Thanh toán QR
             </a>
         </div>
     </footer>
 
 </div>
+<script src="~/js/narration-listening.js" asp-append-version="true" defer></script>
 </body>
 </html>

@@ -8,6 +8,7 @@ using ThuyetMinh.Data.Models;
 using ThuyetMinh.Data.Repositories;
 using ThuyetMinh.Business.Services;
 using ThuyetMinh.Api.Middleware;
+using ThuyetMinh.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,10 +24,17 @@ var sqliteConnection = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(c
 builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseSqlite(sqliteConnection.ToString()));
 
-
+builder.Services.AddSingleton<DemoQrTokenStore>();
+builder.Services.AddScoped<IPaymentOrderRepository, PaymentOrderRepository>();
+builder.Services.AddScoped<IPaymentConfirmationService, PaymentConfirmationService>();
+builder.Services.AddScoped<IListeningService, ListeningService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IShopRepository, ShopRepository>();
 builder.Services.AddScoped<IShopSubmissionRepository, ShopSubmissionRepository>();
+builder.Services.AddScoped<IAnonymousVisitorRepository, AnonymousVisitorRepository>();
+builder.Services.AddScoped<IAnonymousVisitorService, AnonymousVisitorService>();
+builder.Services.AddScoped<IListeningBalanceRepository, ListeningBalanceRepository>();
 builder.Services.AddScoped<TranslationRepository>();
 builder.Services.AddScoped<TranslationService>();
 builder.Services.AddScoped<LanguageRepository>();
@@ -118,6 +126,46 @@ builder.Services.AddSwaggerGen(c =>
 });
 var app = builder.Build();
 
+// DEMO classroom: expose only the visitor-facing routes through a public Quick Tunnel.
+// The tunnel forwards requests from localhost, so RemoteIpAddress alone CANNOT protect
+// local administrator endpoints. Public Host values are restricted before Swagger/auth.
+if (app.Environment.IsDevelopment())
+{
+    app.Use(async (context, next) =>
+    {
+        if (!DemoNetwork.IsDirectLocalRequest(context))
+        {
+            string host = context.Request.Host.Host;
+            if (!host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+            var path = context.Request.Path;
+            bool isGet = HttpMethods.IsGet(context.Request.Method);
+            bool isPost = HttpMethods.IsPost(context.Request.Method);
+            bool permitted = (isGet && (
+                path == "/" || path.StartsWithSegments("/payment") ||
+                path.StartsWithSegments("/Narration") ||
+                path.StartsWithSegments("/demo/qr/pay") ||
+                path.StartsWithSegments("/api/visitor/me") ||
+                path.StartsWithSegments("/api/public/shops") ||
+                path.StartsWithSegments("/css") || path.StartsWithSegments("/js") ||
+                path.StartsWithSegments("/lib") || path.StartsWithSegments("/images") ||
+                path.StartsWithSegments("/favicon.ico"))) ||
+                (isPost && (path.StartsWithSegments("/api/listening") ||
+                    path == "/api/demo/qr/redeem"));
+            if (!permitted)
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+        }
+        await next();
+    });
+}
+
+
 // Seed dữ liệu mẫu
 using (var scope = app.Services.CreateScope())
 {
@@ -159,9 +207,31 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
+// Do not expose paid MP3/audio from wwwroot before balance verification.
+// Production should stream private audio with authorization and metering.
+app.Use(async (context, next) =>
+{
+    string path = context.Request.Path.Value ?? string.Empty;
+    if (new[] { ".mp3", ".wav", ".ogg", ".m4a" }
+        .Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
+    {
+        var visitors = context.RequestServices.GetRequiredService<IAnonymousVisitorService>();
+        var db = context.RequestServices.GetRequiredService<AppDbContext>();
+        var visitor = await visitors.FindExistingAsync(context.Request.Cookies["tm_visitor"]);
+        bool allowed = visitor != null && await db.ListeningBalances
+            .AnyAsync(x => x.AnonymousVisitorId == visitor.Id && x.RemainingSeconds > 0);
+        if (!allowed)
+        {
+            context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
+            return;
+        }
+    }
+    await next();
+});
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapRazorPages();
+app.MapGet("/", () => Results.Redirect("/payment"));
 app.Run();
