@@ -11,7 +11,6 @@ using ThuyetMinh.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 var connectionString = builder.Configuration.GetConnectionString("Default");
 if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException("Chua cau hinh SQLite.");
@@ -22,7 +21,6 @@ var sqliteConnection = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(c
 };
 builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseSqlite(sqliteConnection.ToString()));
-
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IShopRepository, ShopRepository>();
@@ -40,6 +38,7 @@ builder.Services.AddScoped<IShopService, ShopService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddSingleton<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "SmartScheme";
@@ -49,10 +48,8 @@ builder.Services.AddAuthentication(options =>
 {
     options.ForwardDefaultSelector = context =>
     {
-        // Nếu request bắt đầu bằng /api/ → dùng JWT
         if (context.Request.Path.StartsWithSegments("/api"))
             return JwtBearerDefaults.AuthenticationScheme;
-        // Ngược lại → dùng Cookie
         return "Cookies";
     };
 })
@@ -62,29 +59,28 @@ builder.Services.AddAuthentication(options =>
     options.AccessDeniedPath = "/Login";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
 })
-.
-    AddJwtBearer(o =>
+.AddJwtBearer(o =>
+{
+    o.TokenValidationParameters = new TokenValidationParameters
     {
-        o.TokenValidationParameters = new TokenValidationParameters
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
+    };
+    o.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = ctx =>
         {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
-        };
-        o.Events = new JwtBearerEvents
-        {
-            OnTokenValidated = ctx =>
-            {
-                var raw = ctx.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-                var svc = ctx.HttpContext.RequestServices.GetRequiredService<ITokenService>();
-                if (svc.IsBlacklisted(raw)) ctx.Fail("Token đã bị thu hồi");
-                return Task.CompletedTask;
-            }
-        };
-    });
+            var raw = ctx.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var svc = ctx.HttpContext.RequestServices.GetRequiredService<ITokenService>();
+            if (svc.IsBlacklisted(raw)) ctx.Fail("Token đã bị thu hồi");
+            return Task.CompletedTask;
+        }
+    };
+});
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
@@ -117,6 +113,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 var app = builder.Build();
+app.UseStaticFiles();
 
 // Seed dữ liệu mẫu
 using (var scope = app.Services.CreateScope())
@@ -127,6 +124,7 @@ using (var scope = app.Services.CreateScope())
 
     if (!db.Users.Any())
     {
+        // 1. Tạo tài khoản
         var admin = new User { Username = "admin", Role = Role.Admin, FullName = "Quản trị viên", Active = true };
         admin.PasswordHash = hasher.HashPassword(admin, "admin123");
         db.Users.Add(admin);
@@ -137,18 +135,89 @@ using (var scope = app.Services.CreateScope())
 
         db.SaveChanges();
 
-        var shop = new Shop
+        // 2. Tạo 5 Quán ăn ảo với địa chỉ thật
+        var shops = new List<Shop>
         {
-            OwnerId = owner.Id,
-            Name = "Quán mẫu",
-            Address = "Hà Nội",
-            Latitude = 21.0,
-            Longitude = 105.8,
-            ActivationRadiusMeters = 50,
-            PublishStatus = PublishStatus.Draft
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Quán Ăn Gia Đình Phố",
+                Address = "123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM",
+                Latitude = 10.7743,
+                Longitude = 106.6978,
+                ActivationRadiusMeters = 50,
+                PublishStatus = PublishStatus.Approved
+            },
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Bún Chả Hà Nội 36 Phố",
+                Address = "36 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP.HCM",
+                Latitude = 10.7712,
+                Longitude = 106.6935,
+                ActivationRadiusMeters = 60,
+                PublishStatus = PublishStatus.Approved
+            },
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Phở Bò Sài Gòn Xưa",
+                Address = "150 Pasteur, Phường 6, Quận 3, TP.HCM",
+                Latitude = 10.7823,
+                Longitude = 106.6930,
+                ActivationRadiusMeters = 50,
+                PublishStatus = PublishStatus.Approved
+            },
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Ốc Đêm Sài Thành",
+                Address = "45 Võ Văn Tần, Phường 6, Quận 3, TP.HCM",
+                Latitude = 10.7790,
+                Longitude = 106.6915,
+                ActivationRadiusMeters = 80,
+                PublishStatus = PublishStatus.Approved
+            },
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Cơm Tấm Ba Ghiền",
+                Address = "84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM",
+                Latitude = 10.7996,
+                Longitude = 106.6790,
+                ActivationRadiusMeters = 100,
+                PublishStatus = PublishStatus.Approved
+            }
         };
-        db.Shops.Add(shop);
+        db.Shops.AddRange(shops);
         db.SaveChanges();
+
+        // 3. Tạo sẵn 1 ShopSubmission đã duyệt cho mỗi quán (để API lấy content trả về dữ liệu)
+        foreach (var shop in shops)
+        {
+            var sub = new ShopSubmission
+            {
+                ShopId = shop.Id,
+                SubmittedById = owner.Id,
+                Name = shop.Name,
+                Address = shop.Address,
+                Latitude = shop.Latitude,
+                Longitude = shop.Longitude,
+                ActivationRadiusMeters = shop.ActivationRadiusMeters,
+                Description = "Quán ăn ngon, không gian sạch sẽ.",
+                Status = SubmissionStatus.Approved,
+                ReviewedById = admin.Id,
+                ReviewedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            db.ShopSubmissions.Add(sub);
+            db.SaveChanges();
+            
+            // Gắn version đã duyệt vào Shop
+            shop.PublishedVersionId = sub.Id;
+            db.SaveChanges();
+        }
     }
 }
 
