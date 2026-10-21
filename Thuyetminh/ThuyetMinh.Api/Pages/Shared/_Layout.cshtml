@@ -3,11 +3,11 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Quán thuyết minh</title>
-    
-    <!-- CSS chính của app -->
+
+    <title>@ViewData["Title"] - Thuyết minh tự động đa ngôn ngữ</title>
+
     <link rel="stylesheet" href="~/css/app.css" />
-    
+
     <!-- Thư viện Bản đồ Leaflet (Mới thêm) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -15,10 +15,12 @@
 <body>
     <header>
         <nav>
+
             <a href="/" class="brand">
                 <span>🎧</span>
-                Quán thuyết minh
+                Thuyết minh tự động đa ngôn ngữ
             </a>
+
             @if (User.Identity?.IsAuthenticated == true)
             {
                 @if (User.IsInRole("Owner"))
@@ -31,18 +33,18 @@
                     <a href="/Admin/ReviewList" class="nav-link">Duyệt bài</a>
                 }
                 <span class="user-info">Xin chào, @User.Identity.Name</span>
-                
+
                 <form method="post" asp-page="/Logout" style="display:inline; margin: 0;" onsubmit="return confirm('Bạn có chắc chắn muốn đăng xuất không?');">
                     <button type="submit">Đăng xuất</button>
                 </form>
             }
         </nav>
     </header>
-    
+
     <main>
         @RenderBody()
     </main>
-    
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

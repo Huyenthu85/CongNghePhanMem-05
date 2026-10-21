@@ -17,6 +17,33 @@ namespace ThuyetMinh.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
+            modelBuilder.Entity("ThuyetMinh.Data.Models.AnonymousVisitor", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("AnonymousVisitors");
+                });
+
             modelBuilder.Entity("ThuyetMinh.Data.Models.Audio", b =>
                 {
                     b.Property<int>("Id")
@@ -97,6 +124,176 @@ namespace ThuyetMinh.Data.Migrations
                             IsActive = true,
                             Name = "Tiếng Khmer"
                         });
+                });
+
+            modelBuilder.Entity("ThuyetMinh.Data.Models.ListeningBalance", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("AnonymousVisitorId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("RemainingSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnonymousVisitorId")
+                        .IsUnique();
+
+                    b.ToTable("ListeningBalances", t =>
+                        {
+                            t.HasCheckConstraint("CK_ListeningBalance_RemainingSeconds", "RemainingSeconds >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("ThuyetMinh.Data.Models.ListeningSession", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("AnonymousVisitorId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("AudioId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ChargedSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastHeartbeatAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ShopId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnonymousVisitorId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" <> 'Ended'");
+
+                    b.HasIndex("AudioId");
+
+                    b.HasIndex("ShopId");
+
+                    b.ToTable("ListeningSessions", t =>
+                        {
+                            t.HasCheckConstraint("CK_ListeningSession_ChargedSeconds", "ChargedSeconds >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("ThuyetMinh.Data.Models.ListeningTransaction", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("AnonymousVisitorId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("BalanceAfterSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ChangeSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("ListeningSessionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("PaymentOrderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnonymousVisitorId");
+
+                    b.HasIndex("ListeningSessionId");
+
+                    b.HasIndex("PaymentOrderId")
+                        .IsUnique()
+                        .HasFilter("\"PaymentOrderId\" IS NOT NULL");
+
+                    b.ToTable("ListeningTransactions", t =>
+                        {
+                            t.HasCheckConstraint("CK_ListeningTransaction_BalanceAfter", "BalanceAfterSeconds >= 0");
+
+                            t.HasCheckConstraint("CK_ListeningTransaction_Change", "(\"Type\" = 'PaymentCredit' AND \"ChangeSeconds\" > 0 AND \"PaymentOrderId\" IS NOT NULL AND \"ListeningSessionId\" IS NULL) OR (\"Type\" = 'ListeningDebit' AND \"ChangeSeconds\" < 0 AND \"ListeningSessionId\" IS NOT NULL AND \"PaymentOrderId\" IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("ThuyetMinh.Data.Models.PaymentOrder", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("AmountVnd")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("AnonymousVisitorId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("GrantedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("GrantedSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OrderCode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnonymousVisitorId");
+
+                    b.HasIndex("OrderCode")
+                        .IsUnique();
+
+                    b.HasIndex("ProviderTransactionId")
+                        .IsUnique();
+
+                    b.ToTable("PaymentOrders");
                 });
 
             modelBuilder.Entity("ThuyetMinh.Data.Models.ProcessingJob", b =>
@@ -314,6 +511,79 @@ namespace ThuyetMinh.Data.Migrations
                         .HasForeignKey("TranslationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ThuyetMinh.Data.Models.ListeningBalance", b =>
+                {
+                    b.HasOne("ThuyetMinh.Data.Models.AnonymousVisitor", "AnonymousVisitor")
+                        .WithMany()
+                        .HasForeignKey("AnonymousVisitorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AnonymousVisitor");
+                });
+
+            modelBuilder.Entity("ThuyetMinh.Data.Models.ListeningSession", b =>
+                {
+                    b.HasOne("ThuyetMinh.Data.Models.AnonymousVisitor", "AnonymousVisitor")
+                        .WithMany()
+                        .HasForeignKey("AnonymousVisitorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ThuyetMinh.Data.Models.Audio", "Audio")
+                        .WithMany()
+                        .HasForeignKey("AudioId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ThuyetMinh.Data.Models.Shop", "Shop")
+                        .WithMany()
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AnonymousVisitor");
+
+                    b.Navigation("Audio");
+
+                    b.Navigation("Shop");
+                });
+
+            modelBuilder.Entity("ThuyetMinh.Data.Models.ListeningTransaction", b =>
+                {
+                    b.HasOne("ThuyetMinh.Data.Models.AnonymousVisitor", "AnonymousVisitor")
+                        .WithMany()
+                        .HasForeignKey("AnonymousVisitorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ThuyetMinh.Data.Models.ListeningSession", "ListeningSession")
+                        .WithMany()
+                        .HasForeignKey("ListeningSessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ThuyetMinh.Data.Models.PaymentOrder", "PaymentOrder")
+                        .WithMany()
+                        .HasForeignKey("PaymentOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AnonymousVisitor");
+
+                    b.Navigation("ListeningSession");
+
+                    b.Navigation("PaymentOrder");
+                });
+
+            modelBuilder.Entity("ThuyetMinh.Data.Models.PaymentOrder", b =>
+                {
+                    b.HasOne("ThuyetMinh.Data.Models.AnonymousVisitor", "AnonymousVisitor")
+                        .WithMany()
+                        .HasForeignKey("AnonymousVisitorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AnonymousVisitor");
                 });
 
             modelBuilder.Entity("ThuyetMinh.Data.Models.ProcessingJob", b =>

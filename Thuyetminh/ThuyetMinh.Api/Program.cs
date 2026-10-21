@@ -213,7 +213,7 @@ using (var scope = app.Services.CreateScope())
             };
             db.ShopSubmissions.Add(sub);
             db.SaveChanges();
-            
+
             // Gắn version đã duyệt vào Shop
             shop.PublishedVersionId = sub.Id;
             db.SaveChanges();
@@ -227,8 +227,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseStaticFiles();
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
