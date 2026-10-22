@@ -112,16 +112,18 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
 var app = builder.Build();
 app.UseStaticFiles();
 
-// Seed dữ liệu mẫu
+// ============ SEED DATA ============
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
     db.Database.Migrate();
 
+    // 1. Seed Users + 5 quán ăn TP.HCM
     if (!db.Users.Any())
     {
         // 1. Tạo tài khoản
@@ -135,6 +137,7 @@ using (var scope = app.Services.CreateScope())
 
         db.SaveChanges();
 
+<<<<<<< Updated upstream
         // 2. Tạo 5 Quán ăn ảo với địa chỉ thật
         var shops = new List<Shop>
         {
@@ -188,10 +191,20 @@ using (var scope = app.Services.CreateScope())
                 ActivationRadiusMeters = 100,
                 PublishStatus = PublishStatus.Approved
             }
+=======
+        var shops = new List<Shop>
+        {
+            new Shop { OwnerId = owner.Id, Name = "Quán Ăn Gia Đình Phố", Address = "123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM", Latitude = 10.7743, Longitude = 106.6978, ActivationRadiusMeters = 50, PublishStatus = PublishStatus.Approved },
+            new Shop { OwnerId = owner.Id, Name = "Bún Chả Hà Nội 36 Phố", Address = "36 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP.HCM", Latitude = 10.7712, Longitude = 106.6935, ActivationRadiusMeters = 60, PublishStatus = PublishStatus.Approved },
+            new Shop { OwnerId = owner.Id, Name = "Phở Bò Sài Gòn Xưa", Address = "150 Pasteur, Phường 6, Quận 3, TP.HCM", Latitude = 10.7823, Longitude = 106.6930, ActivationRadiusMeters = 50, PublishStatus = PublishStatus.Approved },
+            new Shop { OwnerId = owner.Id, Name = "Ốc Đêm Sài Thành", Address = "45 Võ Văn Tần, Phường 6, Quận 3, TP.HCM", Latitude = 10.7790, Longitude = 106.6915, ActivationRadiusMeters = 80, PublishStatus = PublishStatus.Approved },
+            new Shop { OwnerId = owner.Id, Name = "Cơm Tấm Ba Ghiền", Address = "84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM", Latitude = 10.7996, Longitude = 106.6790, ActivationRadiusMeters = 100, PublishStatus = PublishStatus.Approved }
+>>>>>>> Stashed changes
         };
         db.Shops.AddRange(shops);
         db.SaveChanges();
 
+<<<<<<< Updated upstream
         // 3. Tạo sẵn 1 ShopSubmission đã duyệt cho mỗi quán (để API lấy content trả về dữ liệu)
         foreach (var shop in shops)
         {
@@ -216,6 +229,66 @@ using (var scope = app.Services.CreateScope())
             
             // Gắn version đã duyệt vào Shop
             shop.PublishedVersionId = sub.Id;
+=======
+        foreach (var s in shops)
+        {
+            var sub = new ShopSubmission
+            {
+                ShopId = s.Id, SubmittedById = owner.Id,
+                Name = s.Name, Address = s.Address,
+                Latitude = s.Latitude, Longitude = s.Longitude,
+                ActivationRadiusMeters = s.ActivationRadiusMeters,
+                Description = "Quán ăn ngon, không gian sạch sẽ.",
+                Status = SubmissionStatus.Approved,
+                ReviewedById = admin.Id, ReviewedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow
+            };
+            db.ShopSubmissions.Add(sub);
+            db.SaveChanges();
+            s.PublishedVersionId = sub.Id;
+        }
+        db.SaveChanges();
+    }
+
+    // 2. Seed Languages cho Module B
+    if (!db.Languages.Any())
+    {
+        db.Languages.AddRange(
+            new Language { Code = "vi", Name = "Tiếng Việt", IsActive = true },
+            new Language { Code = "en", Name = "Tiếng Anh", IsActive = true },
+            new Language { Code = "ja", Name = "Tiếng Nhật", IsActive = true }
+        );
+        db.SaveChanges();
+    }
+
+    // 3. Seed Translation + Audio cho Module B
+    if (!db.Translations.Any())
+    {
+        var firstApprovedSub = db.ShopSubmissions
+            .FirstOrDefault(s => s.Status == SubmissionStatus.Approved);
+        var viLang = db.Languages.FirstOrDefault(l => l.Code == "vi");
+        
+        if (firstApprovedSub != null && viLang != null)
+        {
+            var translation = new Translation
+            {
+                ShopSubmissionId = firstApprovedSub.Id,
+                LanguageId = viLang.Id,
+                TranslatedText = "Chào mừng đến với Quán Ăn Gia Đình Phố. Quán chuyên các món ăn Việt truyền thống, không gian ấm cúng.",
+                Status = "Success"
+            };
+            db.Translations.Add(translation);
+            db.SaveChanges();
+
+            var audio = new Audio
+            {
+                TranslationId = translation.Id,
+                FilePath = "/audio/quan-mau.mp3",
+                DurationSeconds = 5,
+                Status = "Success"
+            };
+            db.Audios.Add(audio);
+>>>>>>> Stashed changes
             db.SaveChanges();
         }
     }

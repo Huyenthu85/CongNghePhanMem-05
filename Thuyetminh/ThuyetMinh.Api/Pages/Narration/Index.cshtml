@@ -1,0 +1,137 @@
+@page
+@model ThuyetMinh.Api.Pages.Narration.IndexModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Thuyết minh đa ngôn ngữ";
+}
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thuyết minh đa ngôn ngữ</title>
+    <link rel="stylesheet" href="/css/narration.css" />
+</head>
+<body>
+<div class="tour-page">
+    <header class="tour-header">
+        <a class="tour-logo" href="/Narration"><span class="logo-icon">♫</span><span>Thuyết Minh Đa Ngôn Ngữ</span></a>
+        <nav class="tour-nav"><a href="/Narration">Khám phá</a><a href="#about">Giới thiệu</a></nav>
+        <span class="gps-status">Thuyết minh đa ngôn ngữ</span>
+    </header>
+    <main class="narration-main">
+        <section id="listing-view" class="browse-view">
+            <div class="browse-hero">
+                <span class="section-label">KHÁM PHÁ ĐỊA ĐIỂM</span>
+                <h1>Chọn quán bạn muốn khám phá</h1>
+                <p>Tìm hiểu những địa điểm ẩm thực và nghe thuyết minh theo ngôn ngữ của bạn.</p>
+            </div>
+            <div id="shop-grid" class="shop-grid"></div>
+        </section>
+        <section id="detail-view" class="detail-view" hidden>
+            <a href="/Narration" class="back-link">← Xem tất cả quán</a>
+            <div class="detail-layout">
+                <div class="detail-photo-wrap">
+                    <img id="detail-photo" alt="Hình minh họa địa điểm" />
+                    <span class="image-label">Ảnh minh họa</span>
+                </div>
+                <div class="detail-info">
+                    <span class="section-label">THÔNG TIN ĐỊA ĐIỂM</span>
+                    <h1 id="shop-name"></h1>
+                    <p id="shop-address" class="muted"></p>
+                    <p id="shop-description" class="short-description"></p>
+                    <div class="language-box">
+                        <label for="language">Ngôn ngữ thuyết minh</label>
+                        <select id="language" disabled><option>Tiếng Việt</option></select>
+                    </div>
+                    <p id="api-status" class="api-status" role="status"></p>
+                </div>
+            </div>
+            <div class="detail-bottom">
+                <section class="map-section" id="about">
+                    <h2>Vị trí quán</h2>
+                    <p id="map-note" class="muted"></p>
+                    <div class="map-frame"><iframe id="shop-map" title="Bản đồ vị trí quán" loading="lazy"></iframe></div>
+                </section>
+            </div>
+        </section>
+    </main>
+    <footer id="audio-dock" class="audio-dock" hidden>
+        <div class="dock-title"><strong id="dock-shop-name"></strong><span>Thuyết minh đa ngôn ngữ</span></div>
+        <div class="audio-controls">
+            <!-- Gắn cứng file MP3 ?v=2 để chống cache -->
+            <audio id="narration-audio" controls preload="metadata" src="/audio/quan-mau.mp3?v=2"></audio>
+            <span id="audio-status" class="audio-status">Sẵn sàng phát</span>
+        </div>
+        <div class="dock-right"><div class="remaining-time"><small>THỜI LƯỢNG AUDIO</small><strong id="remaining-time">--:--</strong></div></div>
+    </footer>
+</div>
+<script>
+(() => {
+    const shops = [
+        { slug:'gia-dinh-pho', shopId:1, name:'Quán Ăn Gia Đình Phố', address:'123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM', lat:10.7743, lon:106.6978, desc:'Quán ăn gia đình với các món Việt truyền thống, không gian ấm cúng.', image:'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1100&q=80' },
+        { slug:'bun-cha-36-pho', shopId:2, name:'Bún Chả Hà Nội 36 Phố', address:'36 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP.HCM', lat:10.7712, lon:106.6935, desc:'Hương vị bún chả chuẩn Hà Nội giữa lòng Sài Gòn, nướng than hoa.', image:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1100&q=80' },
+        { slug:'pho-sai-gon-xua', shopId:3, name:'Phở Bò Sài Gòn Xưa', address:'150 Pasteur, Phường 6, Quận 3, TP.HCM', lat:10.7823, lon:106.6930, desc:'Phở bò nấu theo công thức gia truyền hơn 30 năm, nước dùng thanh ngọt.', image:'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1100&q=80' },
+        { slug:'oc-dem-sai-thanh', shopId:4, name:'Ốc Đêm Sài Thành', address:'45 Võ Văn Tần, Phường 6, Quận 3, TP.HCM', lat:10.7790, lon:106.6915, desc:'Quán ốc đêm với đa dạng các món ốc, ghẹ và tôm hấp bia.', image:'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1100&q=80' },
+        { slug:'com-tam-ba-ghien', shopId:5, name:'Cơm Tấm Ba Ghiền', address:'84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM', lat:10.7996, lon:106.6790, desc:'Cơm tấm sườn nướng mật ong, ăn kèm chả trứng và nước mắm chua ngọt.', image:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1100&q=80' }
+    ];
+    
+    const $ = id => document.getElementById(id);
+    const escapeHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const params = new URLSearchParams(location.search);
+    const selected = shops.find(x => x.slug === params.get('place'));
+    const audio = $('narration-audio');
+    const setStatus = message => { $('api-status').textContent=message; };
+    
+    if (!selected) {
+        $('listing-view').hidden = false;
+        $('detail-view').hidden = true;
+        $('shop-grid').innerHTML = shops.map(s => `
+            <a class="shop-card" href="/Narration?place=${encodeURIComponent(s.slug)}">
+                <div class="shop-card-image"><img src="${s.image}" alt="Ảnh minh họa ${escapeHtml(s.name)}" loading="lazy"></div>
+                <div class="shop-card-body"><span class="section-label">QUÁN ĂN • TP.HCM</span><h2>${escapeHtml(s.name)}</h2><p class="shop-address">${escapeHtml(s.address)}</p><p>${escapeHtml(s.desc)}</p><span class="card-arrow">Xem chi tiết →</span></div>
+            </a>`).join('');
+        return;
+    }
+    
+    $('listing-view').hidden = true;
+    $('detail-view').hidden = false;
+    $('audio-dock').hidden = false;
+    $('shop-name').textContent = selected.name;
+    $('dock-shop-name').textContent = selected.name;
+    $('shop-address').textContent = selected.address;
+    $('shop-description').textContent = selected.desc;
+    $('detail-photo').src = selected.image;
+    $('detail-photo').alt = 'Ảnh minh họa ' + selected.name;
+    $('map-note').textContent = selected.address;
+    
+    const delta=0.006;
+    const map = new URLSearchParams({bbox:[selected.lon-delta,selected.lat-delta,selected.lon+delta,selected.lat+delta].join(','),layer:'mapnik',marker:`${selected.lat},${selected.lon}`});
+    $('shop-map').src = 'https://www.openstreetmap.org/export/embed.html?' + map.toString();
+    
+    // Cập nhật thời lượng khi file tải xong
+    audio.addEventListener('loadedmetadata', () => {
+        const total = Math.floor(audio.duration) || 0;
+        $('remaining-time').textContent = `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+    });
+    
+    // Cập nhật thời gian khi đang phát
+    audio.addEventListener('timeupdate', () => {
+        const cur = Math.floor(audio.currentTime) || 0;
+        const total = Math.floor(audio.duration) || 0;
+        if (total > 0) {
+            $('remaining-time').textContent = `${String(Math.floor(cur/60)).padStart(2,'0')}:${String(cur%60).padStart(2,'0')} / ${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+        }
+    });
+    
+    audio.addEventListener('play',()=> $('audio-status').textContent='Đang phát');
+    audio.addEventListener('pause',()=> {if (!audio.ended) $('audio-status').textContent='Đã tạm dừng';});
+    audio.addEventListener('ended',()=> $('audio-status').textContent='Đã phát xong');
+    audio.addEventListener('error',()=> $('audio-status').textContent='Lỗi file âm thanh');
+    
+    setStatus('Nội dung đã được duyệt. Audio demo đã sẵn sàng.');
+    $('audio-status').textContent = 'Sẵn sàng phát';
+})();
+</script>
+</body>
+</html>
