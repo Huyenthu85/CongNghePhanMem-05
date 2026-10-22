@@ -150,28 +150,17 @@ document.addEventListener("DOMContentLoaded", () => {
         createButton.disabled = true;
         try {
             await createOrder();
-            feedback.textContent = "Đã tạo đơn Pending. Hãy tạo QR để quét trên điện thoại.";
+            if (issueQrButton) issueQrButton.click();
         } catch (error) {
             feedback.textContent = "Không thể tạo đơn: " + error.message;
         } finally { createButton.disabled = false; }
     });
     issueQrButton?.addEventListener("click", async () => {
-        const originInput = document.getElementById("demo-lan-origin");
         const canvas = document.getElementById("demo-qr-canvas");
         const help = document.getElementById("demo-qr-instruction");
         try {
-            const url = new URL((originInput.value || "").trim());
-            const host = url.hostname;
-            const isLan = url.protocol === "http:" && (
-                /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
-                /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
-                /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(host)
-            );
-            const publicTunnel = url.protocol === "https:" &&
-                host.endsWith(".trycloudflare.com") && !url.port;
-            if (!(publicTunnel || (isLan && url.port === "5008")) ||
-                url.pathname !== "/" || url.search || url.hash)
-                throw new Error("Hãy nhập chính xác địa chỉ HTTPS Cloudflare Tunnel.");
+            // Fixed ngrok Dev Domain. Keep token generation on the localhost Admin session.
+            const url = new URL("https://glory-exact-employer.ngrok-free.dev");
             if (!csrfToken) throw new Error("Bạn cần đăng nhập Admin bằng localhost.");
             issueQrButton.disabled = true;
             if (!currentOrderCode) await createOrder();

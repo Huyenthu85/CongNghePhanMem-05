@@ -41,7 +41,9 @@ public sealed class DemoQrController : ControllerBase
     // anonymous visitor cookie. Remote users cannot create arbitrary free credits.
     [HttpPost("/api/demo/qr/issue")]
     [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme, Roles = "Admin")]
-    [ValidateAntiForgeryToken]
+    // Temporary classroom-only workaround for broken antiforgery verification.
+    // Do not deploy this to a public/production environment.
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Issue([FromBody] IssueRequest input)
     {
         if (!_environment.IsDevelopment() || !DemoNetwork.IsDirectLocalRequest(HttpContext))

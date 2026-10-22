@@ -136,7 +136,7 @@ if (app.Environment.IsDevelopment())
         if (!DemoNetwork.IsDirectLocalRequest(context))
         {
             string host = context.Request.Host.Host;
-            if (!host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase))
+            if (!host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase) && !string.Equals(host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase))
             {
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
                 return;
