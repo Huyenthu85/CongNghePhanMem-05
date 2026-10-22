@@ -137,61 +137,7 @@ using (var scope = app.Services.CreateScope())
 
         db.SaveChanges();
 
-<<<<<<< Updated upstream
         // 2. Tạo 5 Quán ăn ảo với địa chỉ thật
-        var shops = new List<Shop>
-        {
-            new Shop
-            {
-                OwnerId = owner.Id,
-                Name = "Quán Ăn Gia Đình Phố",
-                Address = "123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM",
-                Latitude = 10.7743,
-                Longitude = 106.6978,
-                ActivationRadiusMeters = 50,
-                PublishStatus = PublishStatus.Approved
-            },
-            new Shop
-            {
-                OwnerId = owner.Id,
-                Name = "Bún Chả Hà Nội 36 Phố",
-                Address = "36 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP.HCM",
-                Latitude = 10.7712,
-                Longitude = 106.6935,
-                ActivationRadiusMeters = 60,
-                PublishStatus = PublishStatus.Approved
-            },
-            new Shop
-            {
-                OwnerId = owner.Id,
-                Name = "Phở Bò Sài Gòn Xưa",
-                Address = "150 Pasteur, Phường 6, Quận 3, TP.HCM",
-                Latitude = 10.7823,
-                Longitude = 106.6930,
-                ActivationRadiusMeters = 50,
-                PublishStatus = PublishStatus.Approved
-            },
-            new Shop
-            {
-                OwnerId = owner.Id,
-                Name = "Ốc Đêm Sài Thành",
-                Address = "45 Võ Văn Tần, Phường 6, Quận 3, TP.HCM",
-                Latitude = 10.7790,
-                Longitude = 106.6915,
-                ActivationRadiusMeters = 80,
-                PublishStatus = PublishStatus.Approved
-            },
-            new Shop
-            {
-                OwnerId = owner.Id,
-                Name = "Cơm Tấm Ba Ghiền",
-                Address = "84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM",
-                Latitude = 10.7996,
-                Longitude = 106.6790,
-                ActivationRadiusMeters = 100,
-                PublishStatus = PublishStatus.Approved
-            }
-=======
         var shops = new List<Shop>
         {
             new Shop { OwnerId = owner.Id, Name = "Quán Ăn Gia Đình Phố", Address = "123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM", Latitude = 10.7743, Longitude = 106.6978, ActivationRadiusMeters = 50, PublishStatus = PublishStatus.Approved },
@@ -199,37 +145,11 @@ using (var scope = app.Services.CreateScope())
             new Shop { OwnerId = owner.Id, Name = "Phở Bò Sài Gòn Xưa", Address = "150 Pasteur, Phường 6, Quận 3, TP.HCM", Latitude = 10.7823, Longitude = 106.6930, ActivationRadiusMeters = 50, PublishStatus = PublishStatus.Approved },
             new Shop { OwnerId = owner.Id, Name = "Ốc Đêm Sài Thành", Address = "45 Võ Văn Tần, Phường 6, Quận 3, TP.HCM", Latitude = 10.7790, Longitude = 106.6915, ActivationRadiusMeters = 80, PublishStatus = PublishStatus.Approved },
             new Shop { OwnerId = owner.Id, Name = "Cơm Tấm Ba Ghiền", Address = "84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM", Latitude = 10.7996, Longitude = 106.6790, ActivationRadiusMeters = 100, PublishStatus = PublishStatus.Approved }
->>>>>>> Stashed changes
         };
         db.Shops.AddRange(shops);
         db.SaveChanges();
 
-<<<<<<< Updated upstream
-        // 3. Tạo sẵn 1 ShopSubmission đã duyệt cho mỗi quán (để API lấy content trả về dữ liệu)
-        foreach (var shop in shops)
-        {
-            var sub = new ShopSubmission
-            {
-                ShopId = shop.Id,
-                SubmittedById = owner.Id,
-                Name = shop.Name,
-                Address = shop.Address,
-                Latitude = shop.Latitude,
-                Longitude = shop.Longitude,
-                ActivationRadiusMeters = shop.ActivationRadiusMeters,
-                Description = "Quán ăn ngon, không gian sạch sẽ.",
-                Status = SubmissionStatus.Approved,
-                ReviewedById = admin.Id,
-                ReviewedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            db.ShopSubmissions.Add(sub);
-            db.SaveChanges();
-            
-            // Gắn version đã duyệt vào Shop
-            shop.PublishedVersionId = sub.Id;
-=======
+        // 3. Tạo sẵn 1 ShopSubmission đã duyệt cho mỗi quán
         foreach (var s in shops)
         {
             var sub = new ShopSubmission
@@ -288,7 +208,6 @@ using (var scope = app.Services.CreateScope())
                 Status = "Success"
             };
             db.Audios.Add(audio);
->>>>>>> Stashed changes
             db.SaveChanges();
         }
     }
