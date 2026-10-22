@@ -1,0 +1,349 @@
+:root {
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    color:#243141;
+    background:#f4f7fa
+}
+* {
+    box-sizing:border-box
+}
+body {
+    margin:0
+}
+a {
+    color:inherit;
+    text-decoration:none
+}
+button,select {
+    font:inherit
+}
+[hidden] {
+    display:none!important
+}
+.tour-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:24px;
+    padding:18px max(24px,calc((100vw - 1200px)/2));
+    background:#fff;
+    border-bottom:1px solid #e7ecf1;
+    flex-wrap:wrap
+}
+.tour-logo {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:800;
+    font-size:18px;
+    color:#18374d
+}
+.logo-icon {
+    display:grid;
+    place-items:center;
+    background:#fef0ea;
+    color:#dc6847;
+    width:36px;
+    height:36px;
+    border-radius:12px
+}
+.tour-nav {
+    display:flex;
+    gap:26px;
+    font-weight:600;
+    font-size:14px
+}
+.tour-nav a:hover {
+    color:#c35940
+}
+.gps-status {
+    font-size:12px;
+    color:#637487
+}
+.narration-main {
+    max-width:1200px;
+    margin:auto;
+    padding:38px 24px 120px
+}
+.section-label {
+    font-weight:800;
+    letter-spacing:.14em;
+    font-size:11px;
+    color:#d2644a
+}
+.browse-hero {
+    text-align:center;
+    margin:10px 0 34px
+}
+.browse-hero h1 {
+    font-size:clamp(28px,4vw,42px);
+    margin:10px 0
+}
+.browse-hero p,.muted {
+    color:#718094
+}
+.shop-grid {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:24px
+}
+.shop-card {
+    background:#fff;
+    border:1px solid #e5eaf0;
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:0 8px 24px #20364b0a;
+    transition:transform .2s,box-shadow .2s
+}
+.shop-card:hover {
+    transform:translateY(-4px);
+    box-shadow:0 18px 34px #20364b18
+}
+.shop-card-image {
+    height:195px;
+    background:#dee7e9
+}
+.shop-card-image img {
+    width:100%;
+    height:100%;
+    object-fit:cover
+}
+.shop-card-body {
+    padding:22px
+}
+.shop-card h2 {
+    font-size:20px;
+    margin:10px 0
+}
+.shop-card p {
+    font-size:14px;
+    line-height:1.65;
+    color:#637487;
+    margin:8px 0
+}
+.shop-card .shop-address {
+    font-size:12px
+}
+.card-arrow {
+    display:inline-block;
+    margin-top:14px;
+    color:#bf543a;
+    font-weight:700;
+    font-size:14px
+}
+.back-link {
+    display:inline-block;
+    margin-bottom:22px;
+    color:#b6533d;
+    font-weight:700;
+    font-size:14px
+}
+.detail-layout {
+    display:grid;
+    grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr);
+    gap:25px;
+    align-items:stretch
+}
+.detail-photo-wrap {
+    position:relative;
+    min-height:490px;
+    border-radius:22px;
+    overflow:hidden;
+    background:#e6eaed
+}
+.detail-photo-wrap img {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    position:absolute;
+    inset:0
+}
+.image-label {
+    position:absolute;
+    left:18px;
+    bottom:18px;
+    color:#fff;
+    font-size:12px;
+    background:#0008;
+    padding:8px 12px;
+    border-radius:20px
+}
+.detail-info {
+    background:#fff;
+    border:1px solid #e5eaf0;
+    border-radius:22px;
+    padding:34px;
+    min-width:0
+}
+.detail-info h1 {
+    font-size:30px;
+    line-height:1.2;
+    margin:14px 0
+}
+.short-description {
+    line-height:1.65;
+    color:#475a6e
+}
+.language-box {
+    margin-top:25px;
+    display:grid;
+    gap:10px
+}
+.language-box label {
+    font-size:14px;
+    font-weight:700
+}
+.language-box select {
+    padding:12px 14px;
+    border:1px solid #ccd7e1;
+    border-radius:11px;
+    background:#fff;
+    color:#27384a;
+    width:100%
+}
+.tour-description {
+    border-top:1px solid #e8edf2;
+    margin-top:25px;
+    padding-top:12px
+}
+.tour-description h2,.map-section h2 {
+    font-size:19px
+}
+.preview-text {
+    white-space:pre-line;
+    line-height:1.8;
+    color:#52657a;
+    font-size:14px
+}
+.preview-text.collapsed {
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:4;
+    overflow:hidden
+}
+.text-toggle {
+    border:0;
+    background:transparent;
+    padding:4px 0;
+    color:#c15e43;
+    font-weight:700;
+    cursor:pointer
+}
+.api-status {
+    font-size:12px;
+    color:#8b6e4d;
+    line-height:1.6;
+    background:#fff7ec;
+    padding:12px;
+    border-radius:10px;
+    margin-top:15px
+}
+.detail-bottom {
+    margin-top:25px
+}
+.map-section {
+    background:#fff;
+    padding:25px;
+    border:1px solid #e5eaf0;
+    border-radius:22px
+}
+.map-frame {
+    height:280px;
+    border-radius:14px;
+    overflow:hidden;
+    background:#e2e9ef
+}
+.map-frame iframe {
+    border:0;
+    width:100%;
+    height:100%
+}
+.audio-dock {
+    position:sticky;
+    bottom:0;
+    background:#fff;
+    box-shadow:0 -8px 25px #15324b15;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:30px;
+    padding:16px max(24px,calc((100vw - 1200px)/2));
+    z-index:10
+}
+.dock-title {
+    min-width:160px;
+    display:grid;
+    gap:6px
+}
+.dock-title strong {
+    font-size:14px
+}
+.dock-title span,.audio-status {
+    font-size:12px;
+    color:#768698
+}
+.audio-controls {
+    flex:1;
+    min-width:180px;
+    display:grid;
+    gap:6px
+}
+.audio-controls audio {
+    width:100%;
+    height:38px
+}
+.remaining-time {
+    display:grid;
+    gap:5px;
+    text-align:right
+}
+.remaining-time small {
+    font-size:10px;
+    letter-spacing:.1em;
+    color:#718094
+}
+.remaining-time strong {
+    font-size:16px;
+    color:#25415a
+}
+@media(max-width:930px) {
+    .shop-grid {
+        grid-template-columns:repeat(2,minmax(0,1fr))
+    }
+    .detail-layout {
+        grid-template-columns:1fr
+    }
+    .detail-photo-wrap {
+        min-height:300px
+    }
+    
+}
+@media(max-width:600px) {
+    .shop-grid {
+        grid-template-columns:1fr
+    }
+    .narration-main {
+        padding:25px 16px 90px
+    }
+    .detail-info {
+        padding:22px
+    }
+    .tour-header {
+        padding:16px
+    }
+    .audio-dock {
+        padding:12px 16px;
+        flex-wrap:wrap;
+        gap:10px
+    }
+    .audio-controls {
+        order:3;
+        flex-basis:100%
+    }
+    .remaining-time {
+        text-align:right
+    }
+    .tour-nav {
+        display:none
+    }
+    
+}
