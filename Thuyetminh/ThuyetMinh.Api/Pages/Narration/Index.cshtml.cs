@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -43,5 +44,17 @@ public class IndexModel : PageModel
             ThuyetMinh.Api.Services.DemoNetwork.IsDirectLocalRequest(HttpContext))
             ShopId = await _db.Shops.AsNoTracking().Select(x => x.Id).FirstOrDefaultAsync();
         return Page();
+=======
+
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace ThuyetMinh.Api.Pages.Narration
+{
+    public class IndexModel : PageModel
+    {
+        public void OnGet()
+        {
+        }
+>>>>>>> origin/feature/truc-module-a
     }
 }
