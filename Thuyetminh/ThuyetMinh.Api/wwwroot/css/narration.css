@@ -1,758 +1,349 @@
-
+:root {
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    color:#243141;
+    background:#f4f7fa
+}
 * {
-    box-sizing: border-box;
+    box-sizing:border-box
 }
-
-html {
-    scroll-behavior: smooth;
-}
-
 body {
-    margin: 0;
-    padding: 0;
-    background: #f3f6f8;
-    color: #263b4d;
-    font-family: "Segoe UI", Arial, sans-serif;
-    font-size: 15px;
-    line-height: 1.6;
+    margin:0
 }
-
 a {
-    color: inherit;
-    text-decoration: none;
+    color:inherit;
+    text-decoration:none
 }
-
-button,
-input,
-select,
-textarea {
-    font: inherit;
+button,select {
+    font:inherit
 }
-
-.tour-page {
-    width: 100%;
-    min-height: 100vh;
-    padding-bottom: 125px;
+[hidden] {
+    display:none!important
 }
-
 .tour-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 28px;
-    min-height: 76px;
-    padding: 12px 6%;
-    background: rgba(255, 255, 255, 0.98);
-    border-bottom: 1px solid #e7ebef;
-    box-shadow: 0 3px 14px #18334a0a;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:24px;
+    padding:18px max(24px,calc((100vw - 1200px)/2));
+    background:#fff;
+    border-bottom:1px solid #e7ecf1;
+    flex-wrap:wrap
 }
-
 .tour-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: #18364c;
-    font-size: 20px;
-    font-weight: 800;
-    white-space: nowrap;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:800;
+    font-size:18px;
+    color:#18374d
 }
-
 .logo-icon {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    background: #df5353;
-    color: #fff;
-    font-size: 24px;
-    box-shadow: 0 5px 12px #df53532b;
+    display:grid;
+    place-items:center;
+    background:#fef0ea;
+    color:#dc6847;
+    width:36px;
+    height:36px;
+    border-radius:12px
 }
-
 .tour-nav {
-    display: flex;
-    align-items: center;
-    gap: 32px;
+    display:flex;
+    gap:26px;
+    font-weight:600;
+    font-size:14px
 }
-
-.tour-nav a {
-    position: relative;
-    padding: 8px 0;
-    color: #637182;
-    font-size: 14px;
-    font-weight: 600;
-    transition: color 0.2s;
-}
-
 .tour-nav a:hover {
-    color: #df5353;
+    color:#c35940
 }
-
 .gps-status {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 9px 13px;
-    border: 1px solid #f0e4c9;
-    border-radius: 30px;
-    background: #fffaf0;
-    color: #876b37;
-    font-size: 12px;
-    white-space: nowrap;
+    font-size:12px;
+    color:#637487
 }
-
-.gps-dot {
-    display: inline-block;
-    flex-shrink: 0;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #e7a83d;
-    box-shadow: 0 0 0 4px #e7a83d20;
-}
-
-.breadcrumb {
-    padding: 15px 6%;
-    background: #fff;
-    color: #84909c;
-    font-size: 12px;
-}
-
-.breadcrumb span {
-    margin: 0 10px;
-    color: #c2cbd3;
-}
-
 .narration-main {
-    width: 100%;
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 28px 32px 150px;
+    max-width:1200px;
+    margin:auto;
+    padding:38px 24px 120px
 }
-
 .section-label {
-    color: #d94f50;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 1.7px;
+    font-weight:800;
+    letter-spacing:.14em;
+    font-size:11px;
+    color:#d2644a
 }
-
-.map-section {
-    width: 100%;
-    padding: 26px;
-    border: 1px solid #e5ebef;
-    border-radius: 20px;
-    background: #fff;
-    box-shadow: 0 8px 28px #20394c08;
+.browse-hero {
+    text-align:center;
+    margin:10px 0 34px
 }
-
-.map-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 18px;
+.browse-hero h1 {
+    font-size:clamp(28px,4vw,42px);
+    margin:10px 0
 }
-
-.map-topbar h1 {
-    margin: 5px 0;
-    color: #19374c;
-    font-size: 27px;
-    font-weight: 800;
-    line-height: 1.3;
+.browse-hero p,.muted {
+    color:#718094
 }
-
-.map-topbar p {
-    margin: 0;
-    color: #788795;
-    font-size: 13px;
+.shop-grid {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:24px
 }
-
-.map-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 30px;
-    background: #f2f7f5;
-    color: #52766b;
-    font-size: 12px;
-    white-space: nowrap;
+.shop-card {
+    background:#fff;
+    border:1px solid #e5eaf0;
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:0 8px 24px #20364b0a;
+    transition:transform .2s,box-shadow .2s
 }
-
-.map-status .gps-dot {
-    background: #61a58a;
-    box-shadow: 0 0 0 4px #61a58a20;
+.shop-card:hover {
+    transform:translateY(-4px);
+    box-shadow:0 18px 34px #20364b18
 }
-
-.map-frame {
-    width: 100%;
-    height: 360px;
-    overflow: hidden;
-    border-radius: 14px;
-    background: #e8efed;
+.shop-card-image {
+    height:195px;
+    background:#dee7e9
 }
-
-.map-frame iframe {
-    display: block;
-    width: 100%;
-    height: 100%;
-    border: 0;
+.shop-card-image img {
+    width:100%;
+    height:100%;
+    object-fit:cover
 }
-
-.map-note {
-    margin: 12px 0 0;
-    color: #87939f;
-    font-size: 12px;
+.shop-card-body {
+    padding:22px
 }
-
-.place-layout {
-    display: grid;
-    grid-template-columns: minmax(240px, 0.78fr) minmax(0, 1.65fr);
-    align-items: stretch;
-    gap: 24px;
-    margin-top: 24px;
+.shop-card h2 {
+    font-size:20px;
+    margin:10px 0
 }
-
-.place-photo {
-    position: relative;
-    min-width: 0;
-    min-height: 520px;
-    overflow: hidden;
-    border-radius: 18px;
-    background: #dce5e0;
-    box-shadow: 0 8px 24px #20394c12;
+.shop-card p {
+    font-size:14px;
+    line-height:1.65;
+    color:#637487;
+    margin:8px 0
 }
-
-.place-photo img {
-    position: absolute;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s ease;
+.shop-card .shop-address {
+    font-size:12px
 }
-
-.place-photo:hover img {
-    transform: scale(1.035);
+.card-arrow {
+    display:inline-block;
+    margin-top:14px;
+    color:#bf543a;
+    font-weight:700;
+    font-size:14px
 }
-
-.photo-caption {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    padding: 65px 22px 24px;
-    background: linear-gradient(transparent, #142c32e8);
-    color: #fff;
+.back-link {
+    display:inline-block;
+    margin-bottom:22px;
+    color:#b6533d;
+    font-weight:700;
+    font-size:14px
 }
-
-.photo-caption span {
-    color: #f6d2b8;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1.5px;
+.detail-layout {
+    display:grid;
+    grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr);
+    gap:25px;
+    align-items:stretch
 }
-
-.photo-caption h2 {
-    margin: 8px 0 0;
-    color: #fff;
-    font-size: 25px;
-    line-height: 1.3;
+.detail-photo-wrap {
+    position:relative;
+    min-height:490px;
+    border-radius:22px;
+    overflow:hidden;
+    background:#e6eaed
 }
-
-.place-layout .tour-details {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    margin: 0;
-    padding: 32px;
-    border: 1px solid #e5ebef;
-    border-radius: 18px;
-    background: #fff;
-    box-shadow: 0 8px 28px #20394c08;
+.detail-photo-wrap img {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    position:absolute;
+    inset:0
 }
-
-.place-layout .tour-details h2 {
-    margin: 10px 0 8px;
-    color: #19374c;
-    font-size: 32px;
-    font-weight: 800;
-    line-height: 1.3;
+.image-label {
+    position:absolute;
+    left:18px;
+    bottom:18px;
+    color:#fff;
+    font-size:12px;
+    background:#0008;
+    padding:8px 12px;
+    border-radius:20px
 }
-
-.tour-location {
-    margin: 0;
-    color: #7c8996;
-    font-size: 13px;
+.detail-info {
+    background:#fff;
+    border:1px solid #e5eaf0;
+    border-radius:22px;
+    padding:34px;
+    min-width:0
 }
-
-.tour-location span {
-    margin-right: 5px;
-    color: #d94f50;
+.detail-info h1 {
+    font-size:30px;
+    line-height:1.2;
+    margin:14px 0
 }
-
-.place-layout .language-box {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-    max-width: 320px;
-    margin-top: 25px;
+.short-description {
+    line-height:1.65;
+    color:#475a6e
 }
-
+.language-box {
+    margin-top:25px;
+    display:grid;
+    gap:10px
+}
 .language-box label {
-    color: #536578;
-    font-size: 13px;
-    font-weight: 700;
+    font-size:14px;
+    font-weight:700
 }
-
 .language-box select {
-    width: 100%;
-    min-height: 46px;
-    padding: 0 14px;
-    border: 1px solid #dce4ea;
-    border-radius: 10px;
-    outline-color: #d94f50;
-    background: #fdfefe;
-    color: #344b5d;
-    font-size: 14px;
-    cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    padding:12px 14px;
+    border:1px solid #ccd7e1;
+    border-radius:11px;
+    background:#fff;
+    color:#27384a;
+    width:100%
 }
-
-.language-box select:focus {
-    border-color: #d94f50;
-    box-shadow: 0 0 0 3px #d94f5018;
+.tour-description {
+    border-top:1px solid #e8edf2;
+    margin-top:25px;
+    padding-top:12px
 }
-
-.place-layout .tour-description {
-    max-width: none;
-    margin-top: 28px;
-    padding-top: 24px;
-    border-top: 1px solid #edf0f3;
+.tour-description h2,.map-section h2 {
+    font-size:19px
 }
-
-.tour-description h3 {
-    margin: 0 0 10px;
-    color: #263e50;
-    font-size: 18px;
-    font-weight: 750;
+.preview-text {
+    white-space:pre-line;
+    line-height:1.8;
+    color:#52657a;
+    font-size:14px
 }
-
-.tour-description p {
-    margin: 0;
-    color: #68798a;
-    line-height: 1.9;
+.preview-text.collapsed {
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:4;
+    overflow:hidden
 }
-
-.place-layout .gps-notice {
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
-    max-width: none;
-    margin-top: 24px;
-    padding: 20px;
-    border: 1px solid #e2eaf0;
-    border-radius: 13px;
-    background: #f8fafb;
+.text-toggle {
+    border:0;
+    background:transparent;
+    padding:4px 0;
+    color:#c15e43;
+    font-weight:700;
+    cursor:pointer
 }
-
-.gps-notice-icon {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: #fff0ef;
-    color: #d94f50;
-    font-size: 23px;
+.api-status {
+    font-size:12px;
+    color:#8b6e4d;
+    line-height:1.6;
+    background:#fff7ec;
+    padding:12px;
+    border-radius:10px;
+    margin-top:15px
 }
-
-.gps-notice strong {
-    display: block;
-    margin-bottom: 4px;
-    color: #294255;
-    font-size: 14px;
+.detail-bottom {
+    margin-top:25px
 }
-
-.gps-notice p {
-    margin: 0;
-    color: #788795;
-    font-size: 13px;
-    line-height: 1.7;
+.map-section {
+    background:#fff;
+    padding:25px;
+    border:1px solid #e5eaf0;
+    border-radius:22px
 }
-
+.map-frame {
+    height:280px;
+    border-radius:14px;
+    overflow:hidden;
+    background:#e2e9ef
+}
+.map-frame iframe {
+    border:0;
+    width:100%;
+    height:100%
+}
 .audio-dock {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 200;
-    display: grid;
-    grid-template-columns: minmax(170px, 0.8fr) minmax(250px, 1.5fr) minmax(300px, 1fr);
-    align-items: center;
-    gap: 28px;
-    min-height: 112px;
-    padding: 18px 5%;
-    border-top: 1px solid #e3e9ee;
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 -8px 28px #18334a0d;
-    backdrop-filter: blur(12px);
+    position:sticky;
+    bottom:0;
+    background:#fff;
+    box-shadow:0 -8px 25px #15324b15;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:30px;
+    padding:16px max(24px,calc((100vw - 1200px)/2));
+    z-index:10
 }
-
 .dock-title {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    min-width: 0;
+    min-width:160px;
+    display:grid;
+    gap:6px
 }
-
 .dock-title strong {
-    overflow: hidden;
-    color: #203b4f;
-    font-size: 15px;
-    font-weight: 750;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size:14px
 }
-
-.dock-title span {
-    color: #84919e;
-    font-size: 12px;
+.dock-title span,.audio-status {
+    font-size:12px;
+    color:#768698
 }
-
 .audio-controls {
-    min-width: 0;
+    flex:1;
+    min-width:180px;
+    display:grid;
+    gap:6px
 }
-
 .audio-controls audio {
-    display: block;
-    width: 100%;
-    height: 40px;
+    width:100%;
+    height:38px
 }
-
-.audio-status {
-    display: block;
-    margin-top: 4px;
-    color: #8995a1;
-    font-size: 11px;
-}
-
-.dock-right {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 22px;
-    min-width: 0;
-}
-
 .remaining-time {
-    display: flex;
-    align-items: center;
-    gap: 11px;
+    display:grid;
+    gap:5px;
+    text-align:right
 }
-
-.clock-icon {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
-    background: #fff0ef;
-    color: #d94f50;
-    font-size: 25px;
-}
-
-.remaining-time div {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
 .remaining-time small {
-    color: #82909c;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.4px;
-    white-space: nowrap;
+    font-size:10px;
+    letter-spacing:.1em;
+    color:#718094
 }
-
 .remaining-time strong {
-    color: #263e50;
-    font-size: 14px;
+    font-size:16px;
+    color:#25415a
 }
-
-.payment-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0 20px;
-    border: 1px solid #d94f50;
-    border-radius: 10px;
-    background: #d94f50;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 750;
-    white-space: nowrap;
-    box-shadow: 0 5px 12px #d94f5025;
-    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
-}
-
-.payment-link:hover {
-    transform: translateY(-1px);
-    background: #c94142;
-    box-shadow: 0 7px 16px #d94f5035;
-}
-
-@media (min-width: 1500px) {
-    .place-layout .tour-details {
-        padding-right: 42px;
-        padding-left: 42px;
+@media(max-width:930px) {
+    .shop-grid {
+        grid-template-columns:repeat(2,minmax(0,1fr))
     }
+    .detail-layout {
+        grid-template-columns:1fr
+    }
+    .detail-photo-wrap {
+        min-height:300px
+    }
+    
 }
-
-@media (max-width: 1100px) {
+@media(max-width:600px) {
+    .shop-grid {
+        grid-template-columns:1fr
+    }
+    .narration-main {
+        padding:25px 16px 90px
+    }
+    .detail-info {
+        padding:22px
+    }
     .tour-header {
-        gap: 18px;
-        padding-right: 4%;
-        padding-left: 4%;
+        padding:16px
     }
-
-    .tour-nav {
-        gap: 18px;
-    }
-
-    .narration-main {
-        padding-right: 22px;
-        padding-left: 22px;
-    }
-
-    .place-layout {
-        grid-template-columns: minmax(210px, 0.8fr) minmax(0, 1.5fr);
-        gap: 18px;
-    }
-
-    .place-layout .tour-details {
-        padding: 26px;
-    }
-
     .audio-dock {
-        grid-template-columns: minmax(130px, 0.8fr) minmax(200px, 1.4fr);
-        gap: 12px 22px;
-        padding: 14px 4%;
+        padding:12px 16px;
+        flex-wrap:wrap;
+        gap:10px
     }
-
-    .dock-right {
-        grid-column: 1 / -1;
-        justify-content: space-between;
+    .audio-controls {
+        order:3;
+        flex-basis:100%
     }
-
-    .tour-page {
-        padding-bottom: 180px;
-    }
-}
-
-@media (max-width: 850px) {
-    .narration-main {
-        padding: 18px 20px 190px;
-    }
-
-    .map-section {
-        padding: 20px;
-    }
-
-    .map-frame {
-        height: 300px;
-    }
-
-    .place-layout {
-        grid-template-columns: minmax(190px, 0.75fr) minmax(0, 1.5fr);
-        gap: 16px;
-    }
-
-    .place-photo {
-        min-height: 480px;
-    }
-
-    .place-layout .tour-details {
-        padding: 22px;
-    }
-
-    .place-layout .tour-details h2 {
-        font-size: 26px;
-    }
-
-    .place-layout .gps-notice {
-        padding: 15px;
-    }
-
-    .audio-dock {
-        gap: 14px;
-    }
-
-    .dock-right {
-        gap: 14px;
-    }
-}
-
-@media (max-width: 600px) {
-    .tour-header {
-        flex-wrap: wrap;
-        gap: 12px;
-        padding: 13px 18px;
-    }
-
-    .tour-logo {
-        font-size: 16px;
-    }
-
-    .logo-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 11px;
-        font-size: 21px;
-    }
-
-    .tour-nav {
-        order: 3;
-        width: 100%;
-        justify-content: space-between;
-        gap: 12px;
-    }
-
-    .tour-nav a {
-        font-size: 12px;
-    }
-
-    .gps-status {
-        padding: 7px 9px;
-        font-size: 10px;
-    }
-
-    .breadcrumb {
-        padding: 12px 18px;
-        font-size: 11px;
-    }
-
-    .breadcrumb span {
-        margin: 0 5px;
-    }
-
-    .narration-main {
-        padding: 14px 12px 250px;
-    }
-
-    .map-section {
-        padding: 15px;
-        border-radius: 15px;
-    }
-
-    .map-topbar {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .map-topbar h1 {
-        font-size: 23px;
-    }
-
-    .map-frame {
-        height: 260px;
-    }
-
-    .place-layout {
-        grid-template-columns: 1fr;
-        gap: 15px;
-        margin-top: 15px;
-    }
-
-    .place-photo {
-        min-height: 0;
-        height: 390px;
-    }
-
-    .place-layout .tour-details {
-        padding: 22px 18px;
-        border-radius: 15px;
-    }
-
-    .place-layout .tour-details h2 {
-        font-size: 25px;
-    }
-
-    .place-layout .language-box {
-        max-width: none;
-    }
-
-    .audio-dock {
-        grid-template-columns: 1fr;
-        gap: 9px;
-        padding: 12px 16px;
-    }
-
-    .dock-title {
-        gap: 2px;
-    }
-
-    .dock-title strong {
-        font-size: 13px;
-    }
-
-    .dock-title span {
-        font-size: 10px;
-    }
-
-    .audio-controls audio {
-        height: 32px;
-    }
-
-    .audio-status {
-        margin-top: 0;
-        font-size: 10px;
-    }
-
-    .dock-right {
-        grid-column: auto;
-        justify-content: space-between;
-        gap: 10px;
-    }
-
-    .clock-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 22px;
-    }
-
     .remaining-time {
-        gap: 8px;
+        text-align:right
     }
-
-    .remaining-time small {
-        font-size: 9px;
+    .tour-nav {
+        display:none
     }
-
-    .remaining-time strong {
-        font-size: 12px;
-    }
-
-    .payment-link {
-        min-height: 38px;
-        padding: 0 12px;
-        border-radius: 8px;
-        font-size: 11px;
-    }
-
-    .tour-page {
-        padding-bottom: 235px;
-    }
+    
 }
