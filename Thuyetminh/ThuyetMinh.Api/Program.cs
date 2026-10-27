@@ -289,7 +289,7 @@ using (var scope = app.Services.CreateScope())
             };
             db.ShopSubmissions.Add(sub);
             db.SaveChanges();
-            
+
             // Gắn version đã duyệt vào Shop
             shop.PublishedVersionId = sub.Id;
             db.SaveChanges();
