@@ -13,16 +13,15 @@ using ThuyetMinh.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 
-var connectionString = builder.Configuration.GetConnectionString("Default");
+var connectionString = builder.Configuration.GetConnectionString("SqlServerTest");
+
 if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("Chua cau hinh SQLite.");
-var databasePath = Path.Combine(builder.Environment.ContentRootPath, "congnghephanmem.db");
-var sqliteConnection = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connectionString)
 {
-    DataSource = databasePath
-};
-builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseSqlite(sqliteConnection.ToString()));
+    throw new InvalidOperationException("Chua cau hinh SQL Server.");
+}
+
+builder.Services.AddDbContext<AppDbContext, SqlServerAppDbContext>(o =>
+    o.UseSqlServer(connectionString));
 
 builder.Services.AddSingleton<DemoQrTokenStore>();
 builder.Services.AddScoped<IPaymentOrderRepository, PaymentOrderRepository>();
@@ -70,8 +69,7 @@ builder.Services.AddAuthentication(options =>
     options.AccessDeniedPath = "/Login";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
 })
-.
-    AddJwtBearer(o =>
+.AddJwtBearer(o =>
     {
         o.TokenValidationParameters = new TokenValidationParameters
         {
@@ -139,6 +137,34 @@ if (app.Environment.IsDevelopment())
             if (!host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase) && !string.Equals(host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase))
             {
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+            // FULL-WEBSITE-NGROK-GROUP-TEST: allow the trusted ngrok host to reach
+            // Razor Pages and APIs, while retaining the site's normal authentication.
+            // Only enabled during a controlled group test with changed demo passwords.
+            if (app.Configuration.GetValue<bool>("Demo:AllowFullWebsiteOverNgrok") &&
+                string.Equals(host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase))
+            {
+                // Developer tools are not required for group website testing.
+                if (context.Request.Path.StartsWithSegments("/swagger") ||
+                    context.Request.Path.StartsWithSegments("/Error"))
+                {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
+                await next();
+                return;
+            }
+            // NGROK-PUBLIC-QR-20261027: Dev-only public demo endpoints.
+            // The controller still validates each pending order and tm_visitor ownership.
+            if (app.Configuration.GetValue<bool>("Demo:EnablePublicQr") &&
+                string.Equals(host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase) &&
+                ((context.Request.Path.StartsWithSegments("/api/payment") &&
+                  (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsPost(context.Request.Method))) ||
+                 (context.Request.Path == "/api/demo/qr/issue" &&
+                  HttpMethods.IsPost(context.Request.Method))))
+            {
+                await next();
                 return;
             }
             var path = context.Request.Path;
@@ -268,30 +294,55 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
         }
     }
-}
 
-// Seed languages for Module B
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    // Module B (Truc/Nhong): seed languages independently of existing users.
+    // Idempotent: do not overwrite translations or audio already created in the database.
+    if (!db.Languages.Any(x => x.Code == "vi"))
+        db.Languages.Add(new Language { Code = "vi", Name = "Tiếng Việt", IsActive = true });
+    if (!db.Languages.Any(x => x.Code == "en"))
+        db.Languages.Add(new Language { Code = "en", Name = "Tiếng Anh", IsActive = true });
+    if (!db.Languages.Any(x => x.Code == "zh"))
+        db.Languages.Add(new Language { Code = "zh", Name = "Tiếng Trung", IsActive = true });
+    if (!db.Languages.Any(x => x.Code == "km"))
+        db.Languages.Add(new Language { Code = "km", Name = "Tiếng Khmer", IsActive = true });
+    db.SaveChanges();
 
-    var languages = new[]
+    // Attach the audio demo only to a real, published shop version (never to an arbitrary Id).
+    var demoShop = db.Shops.FirstOrDefault(x =>
+        x.Name == "Quán Ăn Gia Đình Phố" && x.PublishStatus == PublishStatus.Approved);
+    var publishedVersionId = demoShop?.PublishedVersionId;
+    var viLanguage = db.Languages.FirstOrDefault(x => x.Code == "vi");
+    if (publishedVersionId != null && viLanguage != null)
     {
-        new Language { Code = "vi", Name = "Tiếng Việt", IsActive = true },
-        new Language { Code = "en", Name = "Tiếng Anh", IsActive = true },
-        new Language { Code = "zh", Name = "Tiếng Trung", IsActive = true },
-        new Language { Code = "km", Name = "Tiếng Khmer", IsActive = true }
-    };
-
-    foreach (var language in languages)
-    {
-        if (!db.Languages.Any(x => x.Code == language.Code))
+        var translation = db.Translations.FirstOrDefault(x =>
+            x.ShopSubmissionId == publishedVersionId && x.LanguageId == viLanguage.Id);
+        if (translation == null)
         {
-            db.Languages.Add(language);
+            translation = new Translation
+            {
+                ShopSubmissionId = publishedVersionId.Value,
+                LanguageId = viLanguage.Id,
+                TranslatedText = "Chào mừng đến với Quán Ăn Gia Đình Phố. Quán chuyên các món ăn Việt truyền thống, không gian ấm cúng.",
+                Status = "Success"
+            };
+            db.Translations.Add(translation);
+            db.SaveChanges();
+        }
+
+        var demoAudioFile = Path.Combine(app.Environment.WebRootPath ??
+            Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "audio", "quan-mau.mp3");
+        if (File.Exists(demoAudioFile) && !db.Audios.Any(x => x.TranslationId == translation.Id))
+        {
+            db.Audios.Add(new Audio
+            {
+                TranslationId = translation.Id,
+                FilePath = "/audio/quan-mau.mp3",
+                DurationSeconds = 5,
+                Status = "Success"
+            });
+            db.SaveChanges();
         }
     }
-
-    db.SaveChanges();
 }
 
 if (app.Environment.IsDevelopment())

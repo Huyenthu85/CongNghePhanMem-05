@@ -19,9 +19,11 @@ namespace ThuyetMinh.Api.Pages.Payment
         }
         public long AmountVnd { get; } = 20000;
         public long GrantedSeconds { get; } = 900;
-        public bool ShowDemoControls => _environment.IsDevelopment()
-            && User.IsInRole("Admin")
-            && ThuyetMinh.Api.Services.DemoNetwork.IsDirectLocalRequest(HttpContext);
+                // NGROK-PUBLIC-QR-20261027: DEMO only. Never enable on a production deployment.
+        public bool ShowDemoControls => _environment.IsDevelopment() &&
+            ((User.IsInRole("Admin") && ThuyetMinh.Api.Services.DemoNetwork.IsDirectLocalRequest(HttpContext)) ||
+             (string.Equals(Request.Host.Host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase) &&
+              HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetValue<bool>("Demo:EnablePublicQr")));
         public async Task<IActionResult> OnGetAsync()
         {
             Response.Headers.CacheControl = "no-store";

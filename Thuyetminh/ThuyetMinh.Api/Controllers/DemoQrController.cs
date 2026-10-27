@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,7 @@ namespace ThuyetMinh.Api.Controllers;
 
 /// <summary>
 /// Simulates a payment provider for a classroom demo. A phone scans the QR,
-/// but the purchased seconds are credited to the desktop checkout visitor.
+/// and the purchased seconds are credited to the visitor who displayed the QR.
 /// This is NOT a banking integration.
 /// </summary>
 [ApiController]
@@ -40,13 +41,21 @@ public sealed class DemoQrController : ControllerBase
     // Admin creates the QR locally, bound to one Pending order belonging to their
     // anonymous visitor cookie. Remote users cannot create arbitrary free credits.
     [HttpPost("/api/demo/qr/issue")]
-    [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme, Roles = "Admin")]
+    [AllowAnonymous]
     // Temporary classroom-only workaround for broken antiforgery verification.
     // Do not deploy this to a public/production environment.
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Issue([FromBody] IssueRequest input)
     {
-        if (!_environment.IsDevelopment() || !DemoNetwork.IsDirectLocalRequest(HttpContext))
+                // NGROK-PUBLIC-QR-20261027: local authenticated Admin OR explicitly enabled public DEMO.
+        // Any QR created here still has to match the current visitor's Pending order.
+        var cookieAuth = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        bool localAdmin = DemoNetwork.IsDirectLocalRequest(HttpContext) &&
+            cookieAuth.Succeeded && cookieAuth.Principal?.IsInRole("Admin") == true;
+        bool publicDemo = string.Equals(Request.Host.Host,
+            "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase) &&
+            HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetValue<bool>("Demo:EnablePublicQr");
+        if (!_environment.IsDevelopment() || (!localAdmin && !publicDemo))
             return NotFound();
         Request.Cookies.TryGetValue("tm_visitor", out var token);
         var visitor = await _visitors.FindExistingAsync(token);
@@ -100,10 +109,10 @@ public sealed class DemoQrController : ControllerBase
               try {
                 const response = await fetch('/api/demo/qr/redeem', {method:'POST',
                   headers:{'Content-Type':'application/json'},
-                  credentials:'omit', body:JSON.stringify({code})});
+                  credentials:'same-origin', body:JSON.stringify({code})});
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(data.message || 'HTTP ' + response.status);
-                el.textContent = 'Thanh toán MÔ PHỎNG thành công! 900 giây đã được cộng vào phiên của người tạo đơn trên laptop.';
+                el.textContent = 'Đã xác nhận thanh toán DEMO thành công. 900 giây được cộng cho thiết bị hiển thị QR. Bạn có thể đóng trang này.';
               } catch (error) {
                 el.textContent = 'Không thể xác nhận: ' + error.message;
                 document.getElementById('retry').style.display = 'inline-block';
@@ -117,7 +126,7 @@ public sealed class DemoQrController : ControllerBase
     }
 
     // Public only because the user scans via 4G/5G. The short-lived 192-bit
-    // one-order token is the DEMO authorization. No phone listening credit.
+    // one-order token is the DEMO authorization. One scan credits the QR-displaying visitor.
     [AllowAnonymous]
     [HttpPost("/api/demo/qr/redeem")]
     public async Task<IActionResult> Redeem([FromBody] RedeemRequest input)
@@ -130,7 +139,7 @@ public sealed class DemoQrController : ControllerBase
         if (claim.State == DemoQrTokenStore.RedeemState.Busy)
             return Conflict(new { message = "Giao dịch đang xử lý. Hãy thử lại." });
         if (claim.State == DemoQrTokenStore.RedeemState.AlreadyCompleted)
-            return Ok(new { status = "Paid", demo = true, alreadyConfirmed = true });
+            return Conflict(new { message = "QR đã được sử dụng. Hãy tạo mã khác." });
         bool success = false;
         try
         {
