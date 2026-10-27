@@ -1,0 +1,141 @@
+@page "/payment"
+@model ThuyetMinh.Api.Pages.Payment.CheckoutModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Thanh toán gói nghe";
+}
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#293e50" />
+    <title>Thanh toán | Thuyết minh tự động đa ngôn ngữ</title>
+    <link rel="stylesheet" href="/css/payment.css" />
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a class="site-brand" href="/" aria-label="Thuyết minh tự động đa ngôn ngữ">
+                <span class="site-brand-icon" aria-hidden="true">♫</span>
+                <span class="site-brand-name">Thuyết minh tự động đa ngôn ngữ</span>
+            </a>
+            <span class="site-header-label">THANH TOÁN GÓI NGHE</span>
+        </div>
+    </header>
+
+    <div class="payment-page">
+        <main class="payment-container" data-demo-qr="@Model.ShowDemoControls">
+            <div class="payment-title">
+                <div class="payment-heading">
+                    <h1>Thanh toán gói nghe</h1>
+                    <p>Thanh toán một lần để nhận 15 phút thuyết minh.</p>
+                </div>
+                <a href="/Narration" class="back-link">← Vào ứng dụng</a>
+            </div>
+
+            <div class="payment-grid">
+                <section class="card package-card" aria-labelledby="package-heading">
+                    <span class="section-label" id="package-heading">GÓI NGHE DUY NHẤT</span>
+
+                    <div class="price-block">
+                        <div class="price">
+                            @Model.AmountVnd.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))
+                            <small>VNĐ</small>
+                        </div>
+                        <div class="duration">
+                            @(Model.GrantedSeconds / 60) phút nghe · @Model.GrantedSeconds giây
+                        </div>
+                    </div>
+
+                    <ul class="feature-list">
+                        <li>Thuyết minh đa ngôn ngữ</li>
+                        <li>Tự động phát theo vị trí GPS</li>
+                        <li>Tạm dừng và tiếp tục nghe</li>
+                    </ul>
+
+                    <div class="note-box">
+                        <span class="note-icon" aria-hidden="true">ⓘ</span>
+                        <span>
+                            Thời lượng được cộng sau khi thanh toán được xác nhận
+                            và chỉ trừ khi phiên nghe hợp lệ đang phát.
+                        </span>
+                    </div>
+                </section>
+
+                <section class="card qr-card" aria-labelledby="qr-heading">
+                    <div class="qr-top">
+                        <span class="section-label" id="qr-heading">THANH TOÁN BẰNG QR</span>
+                        <span class="payment-status" id="payment-status">Chưa tạo đơn</span>
+                    </div>
+
+                    <div class="qr-frame">
+                        <canvas id="demo-qr-canvas" hidden aria-label="QR thanh toán mô phỏng"></canvas>
+                        <div class="qr-placeholder" aria-label="Chưa có mã QR thanh toán">
+                            <div class="qr-icon" aria-hidden="true">▦</div>
+                            <strong>Mã QR thanh toán</strong>
+                            <small>Chưa kết nối ngân hàng</small>
+                        </div>
+                    </div>
+
+                    <div class="order-info">
+                        <div class="info-row">
+                            <span>Số tiền thanh toán</span>
+                            <strong>
+                                @Model.AmountVnd.ToString("N0",
+                                System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) VNĐ
+                            </strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Thời lượng nhận được</span>
+                            <strong>@(Model.GrantedSeconds / 60) phút</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Trạng thái đơn</span>
+                            <strong class="status pending" id="order-status">Chưa tạo đơn</strong>
+                        </div>
+                    </div>
+
+                   
+                    <div class="payment-actions">
+                        <button type="button" id="create-order-btn" class="payment-primary-btn">
+                            Tạo đơn thanh toán
+                        </button>
+                        <a href="/Narration" id="enter-app-btn" class="payment-primary-btn payment-enter-btn" hidden>
+                            Vào ứng dụng thuyết minh
+                        </a>
+                    </div>
+                    @if (Model.ShowDemoControls)
+                    {
+                        <form id="demo-payment-form" class="demo-payment-form" onsubmit="return false;">
+                            @Html.AntiForgeryToken()
+                            <div class="demo-qr-actions">
+
+                                <button type="button" id="demo-qr-btn" class="payment-primary-btn">
+                                    Tạo QR thanh toán (DEMO)
+                                </button>
+                            </div>
+                            <small id="demo-qr-instruction" class="demo-qr-instruction" hidden></small>
+                        </form>
+                    }
+                    <p id="payment-feedback" class="payment-feedback" role="status" aria-live="polite"></p>
+                    <p id="payment-order-code" class="payment-order-code" hidden></p>
+                    <p class="qr-note">
+                        Chế độ mô phỏng: chưa liên kết ngân hàng, không phát sinh giao dịch tiền thật.
+                        QR được Admin tạo để trình diễn, điện thoại quét sẽ tự mô phỏng giao dịch.
+                    </p>
+
+                </section>
+            </div>
+
+            <p class="payment-footer">
+                Thuyết minh tự động đa ngôn ngữ · Trải nghiệm trên máy tính và điện thoại
+            </p>
+        </main>
+    </div>
+<script src="/js/demo-qr-vendor.js" defer></script>
+    <script src="/js/payment.js" defer></script>
+</body>
+</html>
