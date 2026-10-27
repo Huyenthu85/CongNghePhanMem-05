@@ -12,7 +12,8 @@
     <title>Thuyết minh đa ngôn ngữ</title>
     <link rel="stylesheet" href="/css/narration.css" />
 </head>
-<body>
+<body data-shop-id="@Model.ShopId">
+@Html.AntiForgeryToken()
 <div class="tour-page">
     <header class="tour-header">
         <a class="tour-logo" href="/Narration"><span class="logo-icon">♫</span><span>Thuyết Minh Đa Ngôn Ngữ</span></a>
@@ -58,15 +59,31 @@
             </div>
         </section>
     </main>
-    <footer id="audio-dock" class="audio-dock" hidden>
-        <div class="dock-title"><strong id="dock-shop-name"></strong><span>Thuyết minh đa ngôn ngữ</span></div>
+<footer id="audio-dock" class="audio-dock" hidden>
+    <div class="dock-title">
+        <strong id="dock-shop-name"></strong>
+        <span>Thuyết minh đa ngôn ngữ</span>
+    </div>
+
     <div class="audio-controls">
         <audio id="narration-audio" controls preload="metadata"></audio>
         <span id="audio-status" class="audio-status">Chưa có audio</span>
     </div>
-        <div class="dock-right"><div class="remaining-time"><small>THỜI LƯỢNG AUDIO</small><strong id="remaining-time">--:--</strong></div></div>
-    </footer>
+
+    <div class="dock-right">
+        <div class="remaining-time">
+            <small>THỜI GIAN NGHE CÒN LẠI</small>
+            <strong id="remaining-time">
+                @(Model.RemainingSeconds / 60):@((Model.RemainingSeconds % 60).ToString("D2"))
+            </strong>
+        </div>
+        <a class="payment-link" href="/payment" id="payment-link">
+            Thanh toán QR
+        </a>
+    </div>
+</footer>
 </div>
+<script src="~/js/narration-listening.js" asp-append-version="true" defer></script>
 <script>
 (() => {
     // Danh mục tham khảo do Trúc cung cấp. shopId chỉ điền khi đã có ID THẬT được duyệt trong SQLite.
@@ -82,8 +99,13 @@
     const params = new URLSearchParams(location.search);
     const selected = shops.find(x => x.slug === params.get('place'));
     const audio = $('narration-audio');
+    document.body.dataset.shopId = selected?.shopId ? String(selected.shopId) : '0';
     let versionId = null, languages = [], translationText = '', expanded = false, seq = 0;
-    const stopAudio = () => { audio.pause(); audio.removeAttribute('src'); audio.load(); $('remaining-time').textContent='--:--'; };
+    const stopAudio = () => {
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    };
     const setStatus = message => { $('api-status').textContent=message; };
     if (!selected) {
         $('listing-view').hidden = false;
@@ -108,9 +130,6 @@
     const delta=0.006;
     const map = new URLSearchParams({bbox:[selected.lon-delta,selected.lat-delta,selected.lon+delta,selected.lat+delta].join(','),layer:'mapnik',marker:`${selected.lat},${selected.lon}`});
     $('shop-map').src = 'https://www.openstreetmap.org/export/embed.html?' + map.toString();
-    audio.addEventListener('play',()=> $('audio-status').textContent='Đang phát');
-    audio.addEventListener('pause',()=> {if (!audio.ended) $('audio-status').textContent='Đã tạm dừng';});
-    audio.addEventListener('ended',()=> $('audio-status').textContent='Đã phát xong');
     audio.addEventListener('error',()=> $('audio-status').textContent='Không mở được file âm thanh');
     const loadNarration = async () => {
         const requestId = ++seq;
@@ -140,8 +159,6 @@
                 audio.src = '/' + path.replace(/^\/+/, '');
             }
             audio.load();
-            const total = Math.max(0, Number(item.durationSeconds) || 0);
-            $('remaining-time').textContent = `${String(Math.floor(total/60)).padStart(2,'0')}:${String(Math.floor(total%60)).padStart(2,'0')}`;
             $('audio-status').textContent = 'Sẵn sàng phát';
         } catch(e) { if(requestId===seq) { setStatus(e.message); $('audio-status').textContent='Chưa có audio'; } }
     };

@@ -347,3 +347,9 @@ button,select {
     }
     
 }
+
+.demo-speech-btn { padding: 8px 12px; border: 1px solid #a4d5c5; border-radius: 9px; background: #eaf8f2; color: #166856; cursor: pointer; font-weight: 600; font-size: 12px; }
+.demo-speech-btn:hover { background: #d7f0e5; }
+.demo-speech-btn[hidden] { display: none !important; }
+
+.audio-controls .demo-speech-btn { margin-top: 6px; max-width: 100%; white-space: normal; }
