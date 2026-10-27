@@ -64,18 +64,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const order = await callApi(`/api/payment/orders/${encodeURIComponent(checkedCode)}`);
             if (checkedCode !== currentOrderCode) return;
             if (order.status === "Paid") {
-                updateStatus("Đã thanh toán (MÔ PHỎNG)");
-                feedback.textContent = "Đã nhận thanh toán mô phỏng. Đang kiểm tra 900 giây và chuyển sang Narration...";
-                const visitor = await callApi("/api/visitor/me");
-                if (visitor.remainingSeconds > 0) {
-                    completed = true;
-                    stopPolling();
-                    forgetOrder();
-                    if (enterButton) enterButton.hidden = false;
-                    window.location.replace("/Narration");
-                } else {
-                    feedback.textContent = "Đơn đã Paid nhưng số dư trình duyệt này bằng 0. Kiểm tra cookie tm_visitor trên laptop.";
-                }
+                completed = true;
+                stopPolling();
+                forgetOrder();
+                updateStatus("Đã xác nhận QR (DEMO)");
+                feedback.textContent = "Thanh toán đã xác nhận. Thiết bị này được cộng 900 giây và đang mở trang thuyết minh...";
+                window.location.assign("/Narration");
                 return;
             }
             if (order.status === "Failed" || order.status === "Expired") {
@@ -159,9 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const canvas = document.getElementById("demo-qr-canvas");
         const help = document.getElementById("demo-qr-instruction");
         try {
-            // Fixed ngrok Dev Domain. Keep token generation on the localhost Admin session.
+            // QR target uses the configured demo ngrok domain.
             const url = new URL("https://glory-exact-employer.ngrok-free.dev");
-            if (!csrfToken) throw new Error("Bạn cần đăng nhập Admin bằng localhost.");
+            if (!csrfToken) throw new Error("Không tìm thấy mã xác thực biểu mẫu. Vui lòng tải lại trang.");
             issueQrButton.disabled = true;
             if (!currentOrderCode) await createOrder();
             const ticket = await callApi("/api/demo/qr/issue", {
@@ -181,11 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (canvas) canvas.hidden = false;
             if (help) {
                 help.hidden = false;
-                help.textContent = "Quét QR bằng điện thoại để mô phỏng thanh toán đơn của laptop. Không chuyển tiền thật.";
+                help.textContent = "Dùng điện thoại quét để xác nhận thanh toán mô phỏng. Thiết bị đang hiển thị QR sẽ nhận 900 giây.";
             }
             document.getElementById("qr-heading").textContent = "QR THANH TOÁN (MÔ PHỎNG)";
-            document.querySelector(".qr-note").textContent = "900 giây được cộng vào phiên laptop tạo đơn, không phải điện thoại quét mã.";
-            feedback.textContent = "QR đã tạo. Chờ điện thoại quét; laptop sẽ tự mở Narration khi đơn được xác nhận.";
+            document.querySelector(".qr-note").textContent = "900 giây được cộng cho thiết bị hiển thị QR; điện thoại quét chỉ xác nhận thanh toán.";
+            feedback.textContent = "QR đã tạo. Chờ điện thoại xác nhận; thiết bị này sẽ tự mở Narration sau khi thanh toán thành công.";
             updateStatus("Chờ quét QR thanh toán");
             void checkOrder();
         } catch (error) {

@@ -5,7 +5,7 @@ using ThuyetMinh.Data.Models;
 namespace ThuyetMinh.Business.Services;
 public interface IPaymentConfirmationService
 {
-    Task<bool> ConfirmAsync(string orderCode, string providerTransactionId, long paidAmountVnd);
+    Task<bool> ConfirmAsync(string orderCode, string providerTransactionId, long paidAmountVnd, long? creditedVisitorId = null);
 }
 public class PaymentConfirmationService : IPaymentConfirmationService
 {
@@ -14,7 +14,7 @@ public class PaymentConfirmationService : IPaymentConfirmationService
     {
         _db = db;
     }
-    public async Task<bool> ConfirmAsync(string orderCode, string providerTransactionId, long paidAmountVnd)
+    public async Task<bool> ConfirmAsync(string orderCode, string providerTransactionId, long paidAmountVnd, long? creditedVisitorId = null)
     {
         if (string.IsNullOrWhiteSpace(orderCode) || string.IsNullOrWhiteSpace(providerTransactionId))
             return false;
@@ -30,13 +30,20 @@ public class PaymentConfirmationService : IPaymentConfirmationService
             return false;
         if (await _db.PaymentOrders.AnyAsync(x => x.ProviderTransactionId == providerTransactionId && x.Id != order.Id))
             return false;
+        // Listening credit belongs to the browser that created the order and displayed the QR.
+        // Reject attempts to transfer the credit to a different visitor.
+        if (creditedVisitorId.HasValue && creditedVisitorId.Value != order.AnonymousVisitorId)
+            return false;
+        long receiverId = order.AnonymousVisitorId;
+        if (receiverId <= 0 || !await _db.AnonymousVisitors.AnyAsync(v => v.Id == receiverId && v.IsActive))
+            return false;
         var balance = await _db.ListeningBalances
-            .FirstOrDefaultAsync(x => x.AnonymousVisitorId == order.AnonymousVisitorId);
+            .FirstOrDefaultAsync(x => x.AnonymousVisitorId == receiverId);
         if (balance == null)
         {
             balance = new ListeningBalance
             {
-                AnonymousVisitorId = order.AnonymousVisitorId,
+                AnonymousVisitorId = receiverId,
                 RemainingSeconds = 0
             };
             _db.ListeningBalances.Add(balance);
@@ -51,7 +58,7 @@ public class PaymentConfirmationService : IPaymentConfirmationService
         order.ProviderTransactionId = providerTransactionId;
         _db.ListeningTransactions.Add(new ListeningTransaction
         {
-            AnonymousVisitorId = order.AnonymousVisitorId,
+            AnonymousVisitorId = receiverId,
             Type = ListeningTransactionType.PaymentCredit,
             ChangeSeconds = order.GrantedSeconds,
             BalanceAfterSeconds = newBalance,
