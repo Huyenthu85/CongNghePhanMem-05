@@ -45,6 +45,7 @@ builder.Services.AddScoped<ProcessingJobService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IShopService, ShopService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddSingleton<OnlineUserService>();
 builder.Services.AddSingleton<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddAuthentication(options =>
@@ -375,6 +376,7 @@ app.Use(async (context, next) =>
 });
 app.UseStaticFiles();
 app.UseAuthentication();
+app.UseMiddleware<OnlineUserMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.MapRazorPages();
