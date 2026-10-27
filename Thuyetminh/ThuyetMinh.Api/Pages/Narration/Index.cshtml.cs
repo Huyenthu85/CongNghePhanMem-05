@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +8,13 @@ using ThuyetMinh.Data.Repositories;
 
 namespace ThuyetMinh.Api.Pages.Narration;
 
+public sealed class ApprovedShopInfo
+{
+    public long Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+}
+
 public class IndexModel : PageModel
 {
     private const string CookieName = "tm_visitor";
@@ -16,11 +22,14 @@ public class IndexModel : PageModel
     private readonly IListeningBalanceRepository _balanceRepository;
     private readonly AppDbContext _db;
     private readonly IWebHostEnvironment _environment;
+
     public long ShopId { get; private set; }
     public long RemainingSeconds { get; private set; }
+    public List<ApprovedShopInfo> ApprovedShops { get; private set; } = new();
 
-    public IndexModel(IAnonymousVisitorService visitorService, IListeningBalanceRepository balanceRepository,
-        AppDbContext db, IWebHostEnvironment environment)
+    public IndexModel(IAnonymousVisitorService visitorService,
+        IListeningBalanceRepository balanceRepository, AppDbContext db,
+        IWebHostEnvironment environment)
     {
         _visitorService = visitorService;
         _balanceRepository = balanceRepository;
@@ -33,28 +42,27 @@ public class IndexModel : PageModel
         Request.Cookies.TryGetValue(CookieName, out string? token);
         var visitor = await _visitorService.FindExistingAsync(token);
         if (visitor == null) return Redirect("/payment");
+
         var balance = await _balanceRepository.GetOrCreateAsync(visitor.Id);
         RemainingSeconds = balance.RemainingSeconds;
         if (RemainingSeconds <= 0) return Redirect("/payment");
-        var approvedShop = await _db.Shops.AsNoTracking()
+
+        ApprovedShops = await _db.Shops.AsNoTracking()
             .Where(x => x.PublishStatus == PublishStatus.Approved)
-            .Select(x => x.Id).FirstOrDefaultAsync();
-        ShopId = approvedShop;
+            .Select(x => new ApprovedShopInfo
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Address = x.Address
+            })
+            .ToListAsync();
+        ShopId = ApprovedShops.FirstOrDefault()?.Id ?? 0;
+
+        // Preserve the original direct-local development fallback.
         if (ShopId == 0 && _environment.IsDevelopment() &&
             ThuyetMinh.Api.Services.DemoNetwork.IsDirectLocalRequest(HttpContext))
             ShopId = await _db.Shops.AsNoTracking().Select(x => x.Id).FirstOrDefaultAsync();
+
         return Page();
-=======
-
-using Microsoft.AspNetCore.Mvc.RazorPages;
-
-namespace ThuyetMinh.Api.Pages.Narration
-{
-    public class IndexModel : PageModel
-    {
-        public void OnGet()
-        {
-        }
->>>>>>> origin/feature/truc-module-a
     }
 }
