@@ -13,16 +13,15 @@ using ThuyetMinh.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 
-var connectionString = builder.Configuration.GetConnectionString("Default");
+var connectionString = builder.Configuration.GetConnectionString("SqlServerTest");
+
 if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("Chua cau hinh SQLite.");
-var databasePath = Path.Combine(builder.Environment.ContentRootPath, "congnghephanmem.db");
-var sqliteConnection = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connectionString)
 {
-    DataSource = databasePath
-};
-builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseSqlite(sqliteConnection.ToString()));
+    throw new InvalidOperationException("Chua cau hinh SQL Server.");
+}
+
+builder.Services.AddDbContext<AppDbContext, SqlServerAppDbContext>(o =>
+    o.UseSqlServer(connectionString));
 
 builder.Services.AddSingleton<DemoQrTokenStore>();
 builder.Services.AddScoped<IPaymentOrderRepository, PaymentOrderRepository>();
@@ -138,6 +137,34 @@ if (app.Environment.IsDevelopment())
             if (!host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase) && !string.Equals(host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase))
             {
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+            // FULL-WEBSITE-NGROK-GROUP-TEST: allow the trusted ngrok host to reach
+            // Razor Pages and APIs, while retaining the site's normal authentication.
+            // Only enabled during a controlled group test with changed demo passwords.
+            if (app.Configuration.GetValue<bool>("Demo:AllowFullWebsiteOverNgrok") &&
+                string.Equals(host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase))
+            {
+                // Developer tools are not required for group website testing.
+                if (context.Request.Path.StartsWithSegments("/swagger") ||
+                    context.Request.Path.StartsWithSegments("/Error"))
+                {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
+                await next();
+                return;
+            }
+            // NGROK-PUBLIC-QR-20261027: Dev-only public demo endpoints.
+            // The controller still validates each pending order and tm_visitor ownership.
+            if (app.Configuration.GetValue<bool>("Demo:EnablePublicQr") &&
+                string.Equals(host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase) &&
+                ((context.Request.Path.StartsWithSegments("/api/payment") &&
+                  (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsPost(context.Request.Method))) ||
+                 (context.Request.Path == "/api/demo/qr/issue" &&
+                  HttpMethods.IsPost(context.Request.Method))))
+            {
+                await next();
                 return;
             }
             var path = context.Request.Path;
