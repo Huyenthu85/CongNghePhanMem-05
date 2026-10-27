@@ -43,7 +43,9 @@
                     <div class="tour-description"><p id="shop-description" class="short-description"></p></div>
                     <div class="language-box">
                         <label for="language">Ngôn ngữ thuyết minh</label>
-<select id="language" disabled><option>Đang tải...</option></select>
+                    <select id="language" disabled>
+                        <option>Đang tải...</option>
+                    </select>
                     </div>
                     <p id="api-status" class="api-status" role="status"></p>
                 </div>
@@ -74,7 +76,7 @@
         </div>
     </footer>
 </div>
-<script src="~/js/narration-listening.js" asp-append-version="true" defer></script>
+<script src="\~/js/narration-listening.js" asp-append-version="true" defer></script>
 <script>
 (() => {
     // Danh mục tham khảo do Trúc cung cấp. shopId chỉ điền khi đã có ID THẬT được duyệt trong SQLite.
@@ -99,6 +101,7 @@
         audio.load();
     };
 
+
     if (!selected) {
         $('listing-view').hidden = false;
         $('detail-view').hidden = true;
@@ -109,6 +112,7 @@
             </a>`).join('');
         return;
     }
+
 
     $('listing-view').hidden = true;
     $('detail-view').hidden = false;
@@ -121,6 +125,7 @@
     $('detail-photo').alt = 'Ảnh minh họa ' + selected.name;
     $('map-note').textContent = selected.address;
 
+
     // Use real IDs from the approved SQLite rows, never assume that IDs start at 1.
     const approvedShop = approvedShops.find(x => x.name === selected.name && x.address === selected.address);
     document.body.dataset.shopId = approvedShop ? String(approvedShop.id) : '0';
@@ -128,8 +133,10 @@
     const map = new URLSearchParams({bbox:[selected.lon-delta,selected.lat-delta,selected.lon+delta,selected.lat+delta].join(','),layer:'mapnik',marker:`${selected.lat},${selected.lon}`});
     $('shop-map').src = 'https://www.openstreetmap.org/export/embed.html?' + map.toString();
 
+
     audio.addEventListener('error', () => { $('audio-status').textContent = 'Không tải được file âm thanh'; });
     audio.addEventListener('ended', () => { $('audio-status').textContent = 'Đã phát xong'; });
+
 
     async function loadNarration() {
         const requestId = ++requestSeq;
@@ -174,6 +181,7 @@
             $('language').innerHTML = languages.map(l => `<option value="${escapeHtml(l.code)}">${escapeHtml(l.name)}</option>`).join('');
             $('language').disabled = languages.length === 0;
             if (languages.some(l => l.code === 'vi')) $('language').value = 'vi';
+
 
             if (!approvedShop) {
                 setStatus('Đây là địa điểm tham khảo, chưa có bản ghi đã duyệt khớp tên và địa chỉ trong cơ sở dữ liệu.');

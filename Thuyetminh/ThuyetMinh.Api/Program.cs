@@ -301,8 +301,10 @@ using (var scope = app.Services.CreateScope())
         db.Languages.Add(new Language { Code = "vi", Name = "Tiếng Việt", IsActive = true });
     if (!db.Languages.Any(x => x.Code == "en"))
         db.Languages.Add(new Language { Code = "en", Name = "Tiếng Anh", IsActive = true });
-    if (!db.Languages.Any(x => x.Code == "ja"))
-        db.Languages.Add(new Language { Code = "ja", Name = "Tiếng Nhật", IsActive = true });
+    if (!db.Languages.Any(x => x.Code == "zh"))
+        db.Languages.Add(new Language { Code = "zh", Name = "Tiếng Trung", IsActive = true });
+    if (!db.Languages.Any(x => x.Code == "km"))
+        db.Languages.Add(new Language { Code = "km", Name = "Tiếng Khmer", IsActive = true });
     db.SaveChanges();
 
     // Attach the audio demo only to a real, published shop version (never to an arbitrary Id).
