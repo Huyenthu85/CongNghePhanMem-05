@@ -1,0 +1,152 @@
+@page
+@model ThuyetMinh.Api.Pages.Admin.UsersModel
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<h2>Quản lý người dùng</h2>
+
+<div style="display: flex; gap: 20px; margin-bottom: 24px;">
+    <div style="background: rgba(16, 185, 129, 0.15); padding: 16px 24px; border-radius: 12px; border-left: 4px solid var(--success); flex: 1;">
+        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Đang online</div>
+        <div style="font-size: 32px; font-weight: 700; color: var(--success);">@Model.OnlineCount</div>
+    </div>
+    <div style="background: rgba(6, 182, 212, 0.15); padding: 16px 24px; border-radius: 12px; border-left: 4px solid var(--primary); flex: 1;">
+        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Đang nghe</div>
+        <div style="font-size: 32px; font-weight: 700; color: var(--primary);">@Model.ListeningCount</div>
+    </div>
+    <div style="background: rgba(148, 163, 184, 0.15); padding: 16px 24px; border-radius: 12px; border-left: 4px solid var(--text-muted); flex: 1;">
+        <div style="font-size: 12px; color: var(--text-muted); text-transform: uppercase;">Tổng tài khoản</div>
+        <div style="font-size: 32px; font-weight: 700; color: var(--text-main);">@Model.Users.Count</div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <p class="@(Model.Message.StartsWith("Lỗi") ? "error" : "success")">@Model.Message</p>
+}
+
+<h3 style="margin-top: 32px;">Danh sách tài khoản</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Trạng thái</th>
+            <th>Tên đăng nhập</th>
+            <th>Họ tên</th>
+            <th>SĐT</th>
+            <th>Vai trò</th>
+            <th>Hoạt động cuối</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model.Users)
+        {
+            var isOnline = Model.OnlineUsernames.Contains(u.Username);
+            var isListening = Model.ListeningUsernames.Contains(u.Username);
+            var lastSeen = Model.LastSeen.TryGetValue(u.Username, out var dt) ? dt : (DateTime?)null;
+
+            <tr>
+                <td>
+                    @if (isListening)
+                    {
+                        <span style="color: var(--primary); font-weight: 600;">🎧 Đang nghe</span>
+                    }
+                    else if (isOnline)
+                    {
+                        <span style="color: var(--success);">● Online</span>
+                    }
+                    else
+                    {
+                        <span style="color: var(--text-muted);">○ Offline</span>
+                    }
+                </td>
+                <td>@u.Username</td>
+                <td>@(u.FullName ?? "—")</td>
+                <td>@(u.PhoneNumber ?? "—")</td>
+                <td>
+                    @if (u.Role == ThuyetMinh.Data.Models.Role.Admin)
+                    {
+                        <span class="badge badge-approved">Admin</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-pending">Owner</span>
+                    }
+                </td>
+                <td>
+                    @if (lastSeen.HasValue && isOnline)
+                    {
+                        <span>@((DateTime.UtcNow - lastSeen.Value).TotalSeconds.ToString("F0"))s trước</span>
+                    }
+                    else { <span style="color: var(--text-muted);">—</span> }
+                </td>
+                <td>
+                    <form method="post" asp-page-handler="ToggleActive" asp-route-id="@u.Id" style="display: inline;">
+                        @if (u.Username == "admin")
+                        {
+                            <span style="color: var(--text-muted); font-size: 12px;">—</span>
+                        }
+                        else if (u.Active)
+                        {
+                            <button type="submit" class="btn-secondary" style="padding: 6px 14px; font-size: 13px; margin: 0;" onclick="return confirm('Khoá tài khoản @u.Username?');">🔒 Khoá</button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn-primary" style="padding: 6px 14px; font-size: 13px; margin: 0;">🔓 Mở khoá</button>
+                        }
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3 style="margin-top: 32px;">Khách ẩn danh đang truy cập</h3>
+@if (!Model.OnlineUsernames.Any(u => u.StartsWith("Khách-")))
+{
+    <p style="color: var(--text-muted);">Không có khách ẩn danh nào.</p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Trạng thái</th>
+                <th>Session</th>
+                <th>IP</th>
+                <th>Trình duyệt</th>
+                <th>Đang nghe</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model.OnlineUsers.Where(x => x.Username.StartsWith("Khách-")))
+            {
+                <tr>
+                    <td>
+                        @if (u.IsListening)
+                        {
+                            <span style="color: var(--primary);">🎧 Đang nghe</span>
+                        }
+                        else
+                        {
+                            <span style="color: var(--success);">● Online</span>
+                        }
+                    </td>
+                    <td>@u.Username</td>
+                    <td>@u.IpAddress</td>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@u.UserAgent</td>
+                    <td>@(u.ListeningShop ?? "—")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<p style="margin-top: 24px; color: var(--text-muted); font-size: 13px;">
+    🔄 Trang tự cập nhật mỗi 10 giây.
+</p>
+
+<script>
+    setTimeout(() => location.reload(), 10000);
+</script>

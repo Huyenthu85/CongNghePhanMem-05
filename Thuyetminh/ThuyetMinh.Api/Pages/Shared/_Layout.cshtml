@@ -8,7 +8,7 @@
     <!-- CSS chính của app -->
     <link rel="stylesheet" href="~/css/app.css" />
     
-    <!-- Thư viện Bản đồ Leaflet (Mới thêm) -->
+    <!-- Thư viện Bản đồ Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
@@ -29,6 +29,7 @@
                 @if (User.IsInRole("Admin"))
                 {
                     <a href="/Admin/ReviewList" class="nav-link">Duyệt bài</a>
+                    <a href="/Admin/Users" class="nav-link">Quản lý người dùng</a>
                 }
                 <span class="user-info">Xin chào, @User.Identity.Name</span>
                 
