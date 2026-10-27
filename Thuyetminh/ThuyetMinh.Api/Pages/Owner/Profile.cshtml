@@ -1,0 +1,62 @@
+@page
+@model ThuyetMinh.Api.Pages.Owner.ProfileModel
+@{
+    ViewData["Title"] = "Trang cá nhân";
+}
+
+<div style="display: flex; gap: 24px; align-items: flex-start;">
+    <div style="flex: 1; background: rgba(15, 23, 42, 0.4); padding: 24px; border-radius: 12px; border: 1px solid var(--border-color);">
+        <h3 style="margin-top: 0; color: var(--primary);">Thông tin cá nhân</h3>
+        <p style="margin-bottom: 12px;"><strong>Họ tên:</strong> @Model.CurrentUser.FullName</p>
+        <p style="margin-bottom: 12px;"><strong>Tên đăng nhập:</strong> @Model.CurrentUser.Username</p>
+        <p style="margin-bottom: 12px;"><strong>Số điện thoại:</strong> @(Model.CurrentUser.PhoneNumber ?? "Chưa cập nhật")</p>
+        <p style="margin-bottom: 12px;"><strong>Địa chỉ:</strong> @(Model.CurrentUser.Address ?? "Chưa cập nhật")</p>
+    </div>
+
+    <div style="flex: 2;">
+        <h3 style="margin-top: 0;">Danh sách quán của tôi (@Model.MyShops.Count)</h3>
+        @if (!Model.MyShops.Any())
+        {
+            <p style="color: var(--text-muted);">Bạn chưa có quán nào.</p>
+        }
+        else
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên quán</th>
+                        <th>Địa chỉ</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var s in Model.MyShops)
+                {
+                    <tr>
+                        <td>@s.Name</td>
+                        <td>@s.Address</td>
+                        <td>
+                            @switch (s.PublishStatus)
+                            {
+                                case ThuyetMinh.Data.Models.PublishStatus.Draft:
+                                    <span class="badge badge-draft">Nháp</span>
+                                    break;
+                                case ThuyetMinh.Data.Models.PublishStatus.Pending:
+                                    <span class="badge badge-pending">Chờ duyệt</span>
+                                    break;
+                                case ThuyetMinh.Data.Models.PublishStatus.Approved:
+                                    <span class="badge badge-approved">Đã duyệt</span>
+                                    break;
+                                case ThuyetMinh.Data.Models.PublishStatus.Rejected:
+                                    <span class="badge badge-rejected">Bị từ chối</span>
+                                    break;
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+

@@ -42,7 +42,9 @@
                     <p id="shop-description" class="short-description"></p>
                     <div class="language-box">
                         <label for="language">Ngôn ngữ thuyết minh</label>
-                        <select id="language" disabled><option>Đang tải...</option></select>
+                    <select id="language" disabled>
+                        <option>Đang tải...</option>
+                    </select>
                     </div>
                     <p id="api-status" class="api-status" role="status"></p>
                 </div>
@@ -58,7 +60,10 @@
     </main>
     <footer id="audio-dock" class="audio-dock" hidden>
         <div class="dock-title"><strong id="dock-shop-name"></strong><span>Thuyết minh đa ngôn ngữ</span></div>
-        <div class="audio-controls"><audio id="narration-audio" controls preload="metadata"></audio><span id="audio-status" class="audio-status">Chưa có audio</span></div>
+    <div class="audio-controls">
+        <audio id="narration-audio" controls preload="metadata"></audio>
+        <span id="audio-status" class="audio-status">Chưa có audio</span>
+    </div>
         <div class="dock-right"><div class="remaining-time"><small>THỜI LƯỢNG AUDIO</small><strong id="remaining-time">--:--</strong></div></div>
     </footer>
 </div>
