@@ -76,7 +76,7 @@ namespace ThuyetMinh.Api.Middleware
 
                 onlineUsers.Track(
                     sessionId,
-                    username,
+                    username ?? "Khách" , 
                     role,
                     context.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
                     context.Request.Headers["User-Agent"].ToString(),
