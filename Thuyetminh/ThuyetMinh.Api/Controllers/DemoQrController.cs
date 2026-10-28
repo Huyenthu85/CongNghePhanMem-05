@@ -53,7 +53,7 @@ public sealed class DemoQrController : ControllerBase
         bool localAdmin = DemoNetwork.IsDirectLocalRequest(HttpContext) &&
             cookieAuth.Succeeded && cookieAuth.Principal?.IsInRole("Admin") == true;
         bool publicDemo = string.Equals(Request.Host.Host,
-            "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase) &&
+            HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Demo:PublicHost"], StringComparison.OrdinalIgnoreCase) &&
             HttpContext.RequestServices.GetRequiredService<IConfiguration>().GetValue<bool>("Demo:EnablePublicQr");
         if (!_environment.IsDevelopment() || (!localAdmin && !publicDemo))
             return NotFound();
