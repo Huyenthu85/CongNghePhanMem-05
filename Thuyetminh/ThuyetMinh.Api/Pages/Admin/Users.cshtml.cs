@@ -26,6 +26,7 @@ namespace ThuyetMinh.Api.Pages.Admin
         public Dictionary<string, DateTime> LastSeen { get; set; } = new();
         public int OnlineCount { get; set; }
         public int ListeningCount { get; set; }
+        public int TotalVisitorProfiles { get; set; }
         public string? Message { get; set; }
 
         public void OnGet() => LoadData();
@@ -55,6 +56,7 @@ namespace ThuyetMinh.Api.Pages.Admin
         private void LoadData()
         {
             Users = _db.Users.OrderByDescending(u => u.Id).ToList();
+            TotalVisitorProfiles = _db.AnonymousVisitors.Count() ;
             OnlineUsers = _onlineUsers.GetOnlineUsers();
             OnlineCount = OnlineUsers.Count;
             ListeningCount = OnlineUsers.Count(u => u.IsListening);
