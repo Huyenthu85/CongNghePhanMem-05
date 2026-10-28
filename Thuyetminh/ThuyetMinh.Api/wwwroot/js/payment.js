@@ -154,7 +154,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const help = document.getElementById("demo-qr-instruction");
         try {
             // QR target uses the configured demo ngrok domain.
-            const url = new URL("https://glory-exact-employer.ngrok-free.dev");
+            const publicHost = document.querySelector(".payment-container")?.dataset.demoPublicHost?.trim();
+if (!publicHost) throw new Error("Chua cau hinh Demo:PublicHost cho may nay.");
+const url = new URL(`https://${publicHost}`);
+if (url.hostname.toLowerCase() !== publicHost.toLowerCase())
+    throw new Error("Ten mien QR khong hop le.");
             if (!csrfToken) throw new Error("Không tìm thấy mã xác thực biểu mẫu. Vui lòng tải lại trang.");
             issueQrButton.disabled = true;
             if (!currentOrderCode) await createOrder();
