@@ -39,13 +39,33 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        Request.Cookies.TryGetValue(CookieName, out string? token);
+        //Làm giao diện trước
+        /*Request.Cookies.TryGetValue(CookieName, out string? token);
         var visitor = await _visitorService.FindExistingAsync(token);
         if (visitor == null) return Redirect("/payment");
 
         var balance = await _balanceRepository.GetOrCreateAsync(visitor.Id);
         RemainingSeconds = balance.RemainingSeconds;
-        if (RemainingSeconds <= 0) return Redirect("/payment");
+        if (RemainingSeconds <= 0) return Redirect("/payment");*/
+
+        Request.Cookies.TryGetValue(CookieName, out string? token);
+        var visitor = await _visitorService.FindExistingAsync(token);
+        bool localPreview = _environment.IsDevelopment()
+            && ThuyetMinh.Api.Services.DemoNetwork.IsDirectLocalRequest(HttpContext)
+            && Request.Query["preview"] == "1";
+
+        if (visitor == null)
+        {
+            if (!localPreview) return Redirect("/payment");
+            RemainingSeconds = 0;
+        }
+        else
+        {
+            var balance = await _balanceRepository.GetOrCreateAsync(visitor.Id);
+            RemainingSeconds = balance.RemainingSeconds;
+            if (RemainingSeconds <= 0 && !localPreview)
+                return Redirect("/payment");
+        }
 
         ApprovedShops = await _db.Shops.AsNoTracking()
             .Where(x => x.PublishStatus == PublishStatus.Approved)

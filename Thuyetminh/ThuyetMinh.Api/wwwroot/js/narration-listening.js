@@ -12,9 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let authorizingAudio = false;
     let timer = null, utterance = null;
     const format = s => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
+    const isLocalPreview =
+    (location.hostname === "localhost" ||
+     location.hostname === "127.0.0.1") &&
+    new URLSearchParams(location.search).get("preview") === "1";
     function showBalance(seconds) {
         secondsEl.textContent = format(seconds);
-        if (seconds <= 0) {
+        if (seconds <= 0 && !isLocalPreview) {
             stopLocal();
             statusEl.textContent = "Đã hết thời lượng. Vui lòng mua thêm để tiếp tục.";
             setTimeout(() => window.location.replace("/payment"), 900);

@@ -36,6 +36,9 @@ builder.Services.AddScoped<IAnonymousVisitorService, AnonymousVisitorService>();
 builder.Services.AddScoped<IListeningBalanceRepository, ListeningBalanceRepository>();
 builder.Services.AddScoped<TranslationRepository>();
 builder.Services.AddScoped<TranslationService>();
+builder.Services.AddScoped<IMachineTranslationService, MachineTranslationService>();
+builder.Services.AddScoped<NarrationProcessingService>();
+builder.Services.AddScoped<ITtsService, TtsService>();
 builder.Services.AddScoped<LanguageRepository>();
 builder.Services.AddScoped<LanguageService>();
 builder.Services.AddScoped<AudioRepository>();
@@ -134,7 +137,11 @@ if (app.Environment.IsDevelopment())
         if (!DemoNetwork.IsDirectLocalRequest(context))
         {
             string host = context.Request.Host.Host;
-            if (!host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase) && !string.Equals(host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase))
+            if (!host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(
+        host,
+        app.Configuration["Demo:PublicHost"],
+        StringComparison.OrdinalIgnoreCase))
             {
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
                 return;
@@ -143,7 +150,11 @@ if (app.Environment.IsDevelopment())
             // Razor Pages and APIs, while retaining the site's normal authentication.
             // Only enabled during a controlled group test with changed demo passwords.
             if (app.Configuration.GetValue<bool>("Demo:AllowFullWebsiteOverNgrok") &&
-                string.Equals(host, "glory-exact-employer.ngrok-free.dev", StringComparison.OrdinalIgnoreCase))
+        !string.IsNullOrWhiteSpace(app.Configuration["Demo:PublicHost"]) &&
+        string.Equals(
+        host,
+        app.Configuration["Demo:PublicHost"],
+        StringComparison.OrdinalIgnoreCase))
             {
                 // Developer tools are not required for group website testing.
                 if (context.Request.Path.StartsWithSegments("/swagger") ||
@@ -288,7 +299,7 @@ using (var scope = app.Services.CreateScope())
             };
             db.ShopSubmissions.Add(sub);
             db.SaveChanges();
-            
+
             // Gắn version đã duyệt vào Shop
             shop.PublishedVersionId = sub.Id;
             db.SaveChanges();

@@ -27,9 +27,24 @@ namespace ThuyetMinh.Data.Repositories
         }
         public Audio Add(Audio audio)
         {
+            if (_context.Audios.Any(x => x.TranslationId == audio.TranslationId))
+                throw new InvalidOperationException("Ban dich nay da co audio.");
             _context.Audios.Add(audio);
             _context.SaveChanges();
             return audio;
+        }
+
+        public Audio Update(Audio audio)
+        {
+            var existing = _context.Audios
+                .FirstOrDefault(x => x.Id == audio.Id);
+            if (existing == null)
+                throw new KeyNotFoundException("Khong tim thay audio.");
+            existing.FilePath = audio.FilePath;
+            existing.DurationSeconds = audio.DurationSeconds;
+            existing.Status = audio.Status;
+            _context.SaveChanges();
+            return existing;
         }
     }
 }
