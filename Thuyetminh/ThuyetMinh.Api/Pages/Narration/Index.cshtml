@@ -16,70 +16,106 @@
 @Html.AntiForgeryToken()
 <div class="tour-page">
     <header class="tour-header">
-        <a class="tour-logo" href="/Narration"><span class="logo-icon">♫</span><span>Thuyết Minh Đa Ngôn Ngữ</span></a>
-        <nav class="tour-nav"><a href="/Narration">Khám phá</a><a href="#about">Giới thiệu</a></nav>
-        <span class="gps-status">Thuyết minh đa ngôn ngữ</span>
+        <div class="header-inner">
+            <a class="tour-logo" href="/Narration"><span class="logo-icon">♫</span><span>Thuyết Minh Tự Động Đa Ngôn Ngữ<small>KHÁM PHÁ QUA ÂM THANH</small></span></a>
+            <nav class="tour-nav" aria-label="Điều hướng chính"><a href="/Narration" class="nav-current">Khám phá</a><a href="/Narration#destinations">Địa điểm</a></nav>
+
+        </div>
     </header>
     <main class="narration-main">
         <section id="listing-view" class="browse-view">
             <div class="browse-hero">
-                <span class="section-label">KHÁM PHÁ ĐỊA ĐIỂM</span>
-                <h1>Chọn quán bạn muốn khám phá</h1>
-                <p>Tìm hiểu những địa điểm ẩm thực và nghe thuyết minh theo ngôn ngữ của bạn.</p>
+                <div class="hero-content">
+                    <span class="eyebrow"><span class="eyebrow-line"></span> KHÁM PHÁ SÀI GÒN THEO CÁCH RIÊNG</span>
+                    <h1>Mỗi địa điểm.<br><em>Một câu chuyện.</em></h1>
+                    <p>Lắng nghe những câu chuyện thú vị đằng sau mỗi điểm đến. Khám phá ẩm thực và văn hóa địa phương bằng ngôn ngữ bạn yêu thích.</p>
+                    <a class="primary-action" href="#destinations">Khám phá địa điểm <span aria-hidden="true">↗</span></a>
+                    <div class="hero-facts"><span><strong>05</strong> Địa điểm giới thiệu</span><span class="fact-separator"></span><span><strong>04</strong> Ngôn ngữ dự kiến</span></div>
+                </div>
+                <div class="hero-photo"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1300&q=85" alt="Không gian ẩm thực" /><div class="hero-photo-caption"><span class="caption-mark">✦</span><span>TRẢI NGHIỆM ĐỊA PHƯƠNG<small>KHÁM PHÁ • LẮNG NGHE • CẢM NHẬN</small></span></div></div>
             </div>
-            <div id="shop-grid" class="shop-grid"></div>
+            <section class="destination-section" id="destinations" aria-label="Danh sách địa điểm">
+                <div class="section-heading"><div><span class="eyebrow">ĐỊA ĐIỂM ĐỀ XUẤT</span><h2>Điểm đến đang chờ bạn</h2><p>Chọn một địa điểm để tìm hiểu và nghe thuyết minh.</p></div><label class="search-box"><span aria-hidden="true">⌕</span><input id="shop-search" type="search" placeholder="Tìm theo tên địa điểm..." aria-label="Tìm kiếm địa điểm" /></label></div>
+                <div id="shop-grid" class="shop-grid"></div>
+                <p id="search-empty" class="search-empty" hidden>Không tìm thấy địa điểm phù hợp.</p>
+            </section>
         </section>
         <section id="detail-view" class="detail-view" hidden>
-            <a href="/Narration" class="back-link">← Xem tất cả quán</a>
+            <div class="detail-topbar"><a href="/Narration" class="back-link" id="back-to-list">← Tất cả địa điểm</a><span class="detail-breadcrumb">KHÁM PHÁ <span>/</span> CHI TIẾT ĐỊA ĐIỂM</span></div>
+            <div class="detail-heading">
+                <span class="eyebrow">HÀNH TRÌNH ẨM THỰC</span>
+                <h1 id="shop-name"></h1>
+                <p id="shop-address" class="detail-address"></p>
+                <p id="hero-description" class="hero-description"></p>
+                <div class="detail-tags" aria-label="Đặc điểm trải nghiệm">
+                    <span>🍽 Ẩm thực Việt Nam</span>
+                    <span>◎ Thuyết minh đa ngôn ngữ</span>
+                    <span>⌖ Khám phá địa điểm</span>
+                </div>
+            </div>
             <div class="detail-layout">
                 <div class="detail-photo-wrap">
                     <img id="detail-photo" alt="Hình minh họa địa điểm" />
-                    <span class="image-label">Ảnh minh họa</span>
+                    <button type="button" class="gallery-arrow gallery-prev" id="gallery-prev" aria-label="Ảnh trước">‹</button>
+                    <button type="button" class="gallery-arrow gallery-next" id="gallery-next" aria-label="Ảnh sau">›</button>
+                    <div class="gallery-bottom">
+                        <span class="image-label">HÌNH ẢNH MINH HỌA</span>
+                        <div class="gallery-thumbnails" id="gallery-thumbnails" aria-label="Chọn ảnh"></div>
+                        <span class="gallery-count" id="gallery-count">1 / 1</span>
+                    </div>
                 </div>
                 <div class="detail-info">
-                    <span class="section-label">THÔNG TIN ĐỊA ĐIỂM</span>
-                    <h1 id="shop-name"></h1>
-                    <p id="shop-address" class="muted"></p>
+                    <div class="info-header"><span class="info-number">01 / KHÁM PHÁ</span><span class="info-symbol" aria-hidden="true">✦</span></div>
+                    <h2>Câu chuyện địa điểm</h2>
                     <div class="tour-description"><p id="shop-description" class="short-description"></p></div>
-                    <div class="language-box">
-                        <label for="language">Ngôn ngữ thuyết minh</label>
-                    <select id="language" disabled>
-                        <option>Đang tải...</option>
-                    </select>
+                    <p class="story-quote" id="story-quote">Mỗi điểm đến là một câu chuyện về văn hóa và ẩm thực địa phương.</p>
+                    <div class="info-divider"></div>
+                    <div class="language-box"><label for="language">CHỌN NGÔN NGỮ THUYẾT MINH</label><select id="language" disabled><option>Đang tải...</option></select><p class="language-note">Nội dung và âm thanh phụ thuộc dữ liệu đã được duyệt.</p></div>
+                    <div class="narration-text-card">
+                        <div class="narration-card-head"><strong>▤ Nội dung thuyết minh</strong><span id="translation-label">Theo ngôn ngữ đã chọn</span></div>
+                        <p id="narration-text-status">Nội dung thuyết minh sẽ được hiển thị khi có bản dịch đã duyệt.</p>
                     </div>
                     <p id="api-status" class="api-status" role="status"></p>
                 </div>
             </div>
             <div class="detail-bottom">
                 <section class="map-section" id="about">
-                    <h2>Vị trí quán</h2>
-                    <p id="map-note" class="muted"></p>
-                    <div class="map-frame"><iframe id="shop-map" title="Bản đồ vị trí quán" loading="lazy"></iframe></div>
+                    <div class="map-header">
+                        <div class="map-copy"><span class="eyebrow">02 / VỊ TRÍ</span><h2>⌖ Vị trí trên bản đồ</h2><p id="map-note" class="muted"></p></div>
+                        <div class="map-actions"><span id="gps-result" class="gps-result" role="status">Chưa xác định vị trí</span><button type="button" id="enable-location" class="location-button">⌖ Bật định vị</button></div>
+                    </div>
+                    <div class="map-frame"><iframe id="shop-map" title="Bản đồ vị trí quán" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+                    <p class="map-disclaimer">Vị trí chỉ mang tính tham khảo; quyền phát thuyết minh vẫn do máy chủ kiểm tra.</p>
                 </section>
             </div>
         </section>
     </main>
     <footer id="audio-dock" class="audio-dock" hidden>
-        <div class="dock-title"><strong id="dock-shop-name"></strong><span>Thuyết minh đa ngôn ngữ</span></div>
-        <div class="audio-controls">
-            <audio id="narration-audio" controls preload="metadata">Trình duyệt không hỗ trợ audio.</audio>
-            <span id="audio-status" class="audio-status">Chưa có audio</span>
-            <button type="button" id="narration-demo-play" class="demo-speech-btn">Nghe giọng đọc mẫu (tiếng Việt)</button>
-            <button type="button" id="narration-demo-pause" class="demo-speech-btn" hidden>Tạm dừng</button>
-        </div>
-        <div class="dock-right">
-            <div class="remaining-time">
-                <small>THỜI GIAN NGHE CÒN LẠI</small>
-                <strong id="remaining-time">@(Model.RemainingSeconds / 60):@((Model.RemainingSeconds % 60).ToString("D2"))</strong>
+        <div class="audio-dock-inner">
+            <div class="dock-title">
+                <span class="dock-kicker">ĐANG KHÁM PHÁ</span>
+                <strong id="dock-shop-name"></strong>
+                <span>Trình phát thuyết minh</span>
             </div>
-            <a class="payment-link" href="/payment" id="payment-link">Thanh toán QR</a>
+            <div class="audio-controls">
+                <audio id="narration-audio" controls preload="metadata">
+                    Trình duyệt không hỗ trợ audio.
+                </audio>
+                <span id="audio-status" class="audio-status">Chưa có audio</span>
+            </div>
+            <div class="dock-right">
+                <div class="remaining-time">
+                    <small>THỜI GIAN CÒN LẠI</small>
+                    <strong id="remaining-time">@(Model.RemainingSeconds / 60):@((Model.RemainingSeconds % 60).ToString("D2"))</strong>
+                </div>
+            </div>
         </div>
     </footer>
 </div>
-<script src="\~/js/narration-listening.js" asp-append-version="true" defer></script>
+<script src="~/js/narration-listening.js" asp-append-version="true" defer></script>
 <script>
 (() => {
-    // Danh mục tham khảo do Trúc cung cấp. shopId chỉ điền khi đã có ID THẬT được duyệt trong SQLite.
+    // Danh mục giới thiệu tham khảo; ID thực tế chỉ xác định theo bản ghi đã duyệt trong SQL Server.
     const shops = [
     { slug:'truong-dh-sai-gon-cs1', shopId:6, name:'Trường Đại Học Sài Gòn - Cơ sở 1', address:'105 Bà Huyện Thanh Quan, Phường 7, Quận 3, TP.HCM', lat:10.7795, lon:106.6845, desc:'Trường Đại học Sài Gòn - một trong những cơ sở giáo dục lâu đời và uy tín nhất khu vực phía Nam.', image:'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1100&q=80' },
         { slug:'gia-dinh-pho', shopId:null, name:'Quán Ăn Gia Đình Phố', address:'123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM', lat:10.7743, lon:106.6978, desc:'Quán ăn gia đình với các món Việt truyền thống, không gian ấm cúng.', image:'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1100&q=80' },
@@ -93,6 +129,11 @@
     const escapeHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const params = new URLSearchParams(location.search);
     const selected = shops.find(x => x.slug === params.get('place'));
+    document.querySelectorAll('a[href^="/Narration"]').forEach(a => {
+        const url = new URL(a.getAttribute('href'), location.origin);
+        if (params.get('preview') === '1') url.searchParams.set('preview', '1');
+        a.setAttribute('href', url.pathname + url.search + url.hash);
+    });
     const audio = $('narration-audio');
     let versionId = null, languages = [], requestSeq = 0;
     const setStatus = message => { $('api-status').textContent = message; };
@@ -107,10 +148,22 @@
         $('listing-view').hidden = false;
         $('detail-view').hidden = true;
         $('shop-grid').innerHTML = shops.map(s => `
-            <a class="shop-card" href="/Narration?place=${encodeURIComponent(s.slug)}">
+            <a class="shop-card" href="/Narration?place=${encodeURIComponent(s.slug)}${params.get('preview') === '1' ? '&preview=1' : ''}">
                 <div class="shop-card-image"><img src="${s.image}" alt="Ảnh minh họa ${escapeHtml(s.name)}" loading="lazy"></div>
                 <div class="shop-card-body"><span class="section-label">QUÁN ĂN • TP.HCM</span><h2>${escapeHtml(s.name)}</h2><p class="shop-address">${escapeHtml(s.address)}</p><p>${escapeHtml(s.desc)}</p><span class="card-arrow">Xem chi tiết →</span></div>
             </a>`).join('');
+        const search = $('shop-search');
+        search.addEventListener('input', () => {
+            const query = search.value.trim().toLocaleLowerCase('vi');
+            let visible = 0;
+            $('shop-grid').querySelectorAll('.shop-card').forEach((card, index) => {
+                const shop = shops[index];
+                const match = (shop.name + ' ' + shop.address + ' ' + shop.desc).toLocaleLowerCase('vi').includes(query);
+                card.hidden = !match;
+                if (match) visible++;
+            });
+            $('search-empty').hidden = visible !== 0;
+        });
         return;
     }
 
@@ -121,13 +174,53 @@
     $('shop-name').textContent = selected.name;
     $('dock-shop-name').textContent = selected.name;
     $('shop-address').textContent = selected.address;
+    $('hero-description').textContent = selected.desc;
+    $('detail-view').style.setProperty('--shop-hero-image', `url("${selected.image}")`);
     $('shop-description').textContent = selected.desc;
     $('detail-photo').src = selected.image;
     $('detail-photo').alt = 'Ảnh minh họa ' + selected.name;
     $('map-note').textContent = selected.address;
 
+    // Bộ ảnh minh họa; nếu chưa có ảnh bổ sung của quán thì chỉ hiển thị ảnh hiện có.
+    const galleryImages = [selected.image];
+    let galleryIndex = 0;
+    const renderGallery = () => {
+        $('detail-photo').src = galleryImages[galleryIndex];
+        $('gallery-count').textContent = `${galleryIndex + 1} / ${galleryImages.length}`;
+        $('gallery-thumbnails').innerHTML = galleryImages.map((url, i) =>
+            `<button type="button" class="gallery-thumb ${i === galleryIndex ? 'active' : ''}" data-index="${i}" aria-label="Xem ảnh ${i+1}"><img src="${url}" alt="Ảnh minh họa ${i+1}"></button>`
+        ).join('');
+        $('gallery-prev').hidden = galleryImages.length < 2;
+        $('gallery-next').hidden = galleryImages.length < 2;
+        $('gallery-thumbnails').hidden = galleryImages.length < 2;
+    };
+    $('gallery-prev').addEventListener('click', () => {galleryIndex = (galleryIndex - 1 + galleryImages.length) % galleryImages.length; renderGallery();});
+    $('gallery-next').addEventListener('click', () => {galleryIndex = (galleryIndex + 1) % galleryImages.length; renderGallery();});
+    $('gallery-thumbnails').addEventListener('click', e => {
+        const button = e.target.closest('button[data-index]');
+        if (button) { galleryIndex = Number(button.dataset.index); renderGallery(); }
+    });
+    renderGallery();
 
-    // Use real IDs from the approved SQLite rows, never assume that IDs start at 1.
+    // GPS chỉ hiển thị khoảng cách tham khảo, KHÔNG cấp quyền nghe.
+    $('enable-location').addEventListener('click', () => {
+        const label = $('gps-result');
+        if (!navigator.geolocation) { label.textContent = 'Trình duyệt không hỗ trợ định vị'; return; }
+        label.textContent = 'Đang xác định vị trí...';
+        navigator.geolocation.getCurrentPosition(pos => {
+            const rad = n => n * Math.PI / 180;
+            const lat1 = pos.coords.latitude, lon1 = pos.coords.longitude;
+            const dLat = rad(selected.lat - lat1), dLon = rad(selected.lon - lon1);
+            const a = Math.sin(dLat / 2)**2 + Math.cos(rad(lat1)) * Math.cos(rad(selected.lat)) * Math.sin(dLon / 2)**2;
+            const meters = 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
+            label.textContent = meters < 1000 ? `Cách khoảng ${Math.round(meters)} m` : `Cách khoảng ${(meters / 1000).toFixed(1)} km`;
+        }, err => {label.textContent = err.code === 1 ? 'Bạn chưa cấp quyền định vị' : 'Không lấy được vị trí';},
+        {enableHighAccuracy: true, timeout: 12000, maximumAge: 30000});
+    });
+
+
+
+    // Use real IDs from approved database rows, never assume that IDs start at 1.
     const approvedShop = approvedShops.find(x => x.name === selected.name && x.address === selected.address);
     document.body.dataset.shopId = approvedShop ? String(approvedShop.id) : '0';
     const delta = 0.006;
@@ -142,6 +235,8 @@
     async function loadNarration() {
         const requestId = ++requestSeq;
         stopAudio();
+        $('narration-text-status').textContent = 'Đang kiểm tra bản dịch...';
+        $('translation-label').textContent = $('language').selectedOptions[0]?.textContent || 'Ngôn ngữ đã chọn';
         const language = languages.find(l => l.code === $('language').value);
         if (!versionId || !language) return;
         $('audio-status').textContent = 'Đang tải audio...';
@@ -150,6 +245,7 @@
             if (!r.ok) throw new Error(r.status === 404 ? 'Quán chưa có bản dịch cho ngôn ngữ này.' : 'Không tải được bản dịch.');
             const translation = await r.json();
             if (requestId !== requestSeq) return;
+            $('narration-text-status').textContent = translation.translatedText || 'Có bản dịch nhưng chưa có nội dung văn bản để hiển thị.';
             const a = await fetch(`/api/Audio/translation/${translation.id}`);
             if (a.status === 404) { $('audio-status').textContent = 'Chưa có audio'; return; }
             if (!a.ok) throw new Error('Không tải được thông tin audio.');
@@ -167,7 +263,7 @@
             audio.load();
             $('audio-status').textContent = 'Sẵn sàng phát';
         } catch(e) {
-            if (requestId === requestSeq) { setStatus(e.message); $('audio-status').textContent = 'Chưa có audio'; }
+            if (requestId === requestSeq) { setStatus(e.message); $('audio-status').textContent = 'Chưa có audio'; $('narration-text-status').textContent = e.message; }
         }
     }
     $('language').addEventListener('change', loadNarration);
@@ -178,7 +274,9 @@
             const all = await r.json();
             languages = Array.isArray(all) ? all : all.value;
             if (!Array.isArray(languages)) throw new Error('Dữ liệu ngôn ngữ không hợp lệ.');
-            languages = languages.filter(l => l.isActive);
+            languages = languages.filter(l =>
+                l.isActive && ['vi', 'en', 'zh', 'km'].includes(l.code?.toLowerCase())
+            );
             $('language').innerHTML = languages.map(l => `<option value="${escapeHtml(l.code)}">${escapeHtml(l.name)}</option>`).join('');
             $('language').disabled = languages.length === 0;
             if (languages.some(l => l.code === 'vi')) $('language').value = 'vi';
