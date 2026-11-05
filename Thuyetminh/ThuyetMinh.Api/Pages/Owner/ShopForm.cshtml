@@ -1,12 +1,12 @@
 @page
-@model ThuyetMinh.Api.Pages.Owner.ShopFormModel
+@model CongNghePhanMem.Api.Pages.Owner.ShopFormModel
 @{
-    ViewData["Title"] = "Thông tin quán";
+    ViewData["Title"] = Model.IsNew ? "Thêm quán mới" : "Chỉnh sửa thông tin quán";
 }
 
-<h2>Thông tin quán</h2>
-<p style="color:#666; font-size:14px;">
-    Mọi chỉnh sửa cần được quản trị viên duyệt trước khi công bố.
+<h2>@ViewData["Title"]</h2>
+<p style="color:var(--text-muted); font-size:14px; margin-bottom: 24px;">
+    Mọi thông tin tạo mới hoặc chỉnh sửa đều cần được quản trị viên duyệt trước khi công bố.
 </p>
 
 <form method="post">
@@ -16,13 +16,29 @@
     <input asp-for="Input.Name" required maxlength="200" />
 
     <label>Địa chỉ *</label>
-    <input asp-for="Input.Address" required maxlength="500" />
+    <div style="position: relative;">
+        <div style="display: flex; gap: 10px;">
+            <input asp-for="Input.Address" id="addressInput" required maxlength="500" style="flex: 1;" placeholder="Gõ địa chỉ (VD: Chợ Bến Thành)..." autocomplete="off" />
+            <button type="button" class="btn btn-secondary" style="margin: 0; white-space: nowrap;" onclick="getCoordinates()">📍 Lấy Tọa độ</button>
+        </div>
+        <!-- Khung gợi ý địa chỉ (Autocomplete) -->
+        <div id="suggestions" style="position: absolute; top: 100%; left: 0; right: 0; background: #1e293b; border: 1px solid var(--border-color); border-radius: 8px; z-index: 1000; display: none; max-height: 250px; overflow-y: auto; margin-top: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);"></div>
+    </div>
+    <p id="geoMessage" style="color: var(--primary); font-size: 13px; margin-top: 4px;"></p>
 
-    <label>Vĩ độ *</label>
-    <input asp-for="Input.Latitude" type="number" step="any" required />
+    <!-- KHUNG BẢN ĐỒ -->
+    <div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-top: 10px; margin-bottom: 16px; border: 1px solid var(--border-color); z-index: 1;"></div>
 
-    <label>Kinh độ *</label>
-    <input asp-for="Input.Longitude" type="number" step="any" required />
+    <div style="display: flex; gap: 16px;">
+        <div style="flex: 1;">
+            <label>Vĩ độ *</label>
+            <input asp-for="Input.Latitude" id="latitudeInput" type="number" step="any" required />
+        </div>
+        <div style="flex: 1;">
+            <label>Kinh độ *</label>
+            <input asp-for="Input.Longitude" id="longitudeInput" type="number" step="any" required />
+        </div>
+    </div>
 
     <label>Bán kính kích hoạt (mét) *</label>
     <input asp-for="Input.ActivationRadiusMeters" type="number" min="1" max="5000" required />
@@ -31,15 +47,173 @@
     <textarea asp-for="Input.Description" maxlength="4000"></textarea>
 
     <label>Ảnh (mỗi dòng một URL)</label>
-    <textarea asp-for="Input.ImageUrlsText"
-              placeholder="https://example.com/a.jpg&#10;https://example.com/b.jpg"></textarea>
+    <textarea asp-for="Input.ImageUrlsText" placeholder="https://example.com/a.jpg&#10;https://example.com/b.jpg"></textarea>
 
     @if (!string.IsNullOrEmpty(Model.Message))
     {
         <p class="success">@Model.Message</p>
     }
 
-    <button type="submit" name="action" value="draft" class="btn-secondary">Lưu nháp</button>
-    <button type="submit" name="action" value="submit" class="btn-primary">Gửi duyệt</button>
-    <a class="btn btn-secondary" href="/Owner/ShopList">Quay lại</a>
+    <div style="margin-top: 24px;">
+        <button type="submit" name="action" value="draft" class="btn-secondary">Lưu nháp</button>
+        <button type="submit" name="action" value="submit" class="btn-primary">Gửi duyệt</button>
+        <a class="btn btn-secondary" href="/Owner/ShopList">Quay lại</a>
+    </div>
 </form>
+
+@section Scripts {
+    <script>
+        // 1. Khởi tạo bản đồ (Mặc định ở TP.HCM)
+        var map = L.map('map').setView([10.7769, 106.7009], 13); 
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        var marker = L.marker([10.7769, 106.7009], { draggable: true }).addTo(map);
+
+        var latInput = document.getElementById("latitudeInput");
+        var lngInput = document.getElementById("longitudeInput");
+
+        // Nếu đang sửa quán, set bản đồ về đúng vị trí
+        if (latInput.value && lngInput.value && latInput.value !== "0") {
+            var lat = parseFloat(latInput.value);
+            var lng = parseFloat(lngInput.value);
+            map.setView([lat, lng], 16);
+            marker.setLatLng([lat, lng]);
+        }
+
+        // Hàm cập nhật Input khi kéo thả Marker
+        marker.on('dragend', function (e) {
+            var position = marker.getLatLng();
+            latInput.value = position.lat.toFixed(6);
+            lngInput.value = position.lng.toFixed(6);
+        });
+
+        // Hàm tìm tọa độ từ địa chỉ (Geocoding)
+        async function getCoordinates() {
+            var address = document.getElementById("addressInput").value;
+            var msg = document.getElementById("geoMessage");
+            
+            if (!address) {
+                msg.innerText = "Vui lòng nhập địa chỉ trước!";
+                msg.style.color = "var(--danger)";
+                return;
+            }
+
+            msg.innerText = "Đang tìm kiếm tọa độ...";
+            msg.style.color = "var(--text-muted)";
+
+            try {
+                // Dùng Photon API để tìm tọa độ chính xác
+                var url = `https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1`;
+                var response = await fetch(url);
+                var data = await response.json();
+
+                if (data.features && data.features.length > 0) {
+                    var coords = data.features[0].geometry.coordinates;
+                    var lon = coords[0];
+                    var lat = coords[1];
+                    
+                    latInput.value = lat.toFixed(6);
+                    lngInput.value = lon.toFixed(6);
+                    
+                    map.setView([lat, lon], 16);
+                    marker.setLatLng([lat, lon]);
+                    
+                    msg.innerText = "✅ Đã lấy tọa độ thành công!";
+                    msg.style.color = "var(--success)";
+                } else {
+                    msg.innerText = "❌ Không tìm thấy địa chỉ này. Vui lòng nhập rõ hơn.";
+                    msg.style.color = "var(--danger)";
+                }
+            } catch (error) {
+                msg.innerText = "❌ Lỗi kết nối API bản đồ.";
+                msg.style.color = "var(--danger)";
+            }
+        }
+
+        // --- XỬ LÝ GỢI Ý ĐỊA CHỈ TỐC ĐỘ CAO (AUTOCOMPLETE) ---
+        let timeoutId;
+        const addressInput = document.getElementById("addressInput");
+        const suggestionsBox = document.getElementById("suggestions");
+
+        addressInput.addEventListener("input", function () {
+            clearTimeout(timeoutId);
+            const query = this.value.trim();
+            
+            // Chỉ cần gõ 2 ký tự là bắt đầu tìm (rất nhạy)
+            if (query.length < 2) {
+                suggestionsBox.style.display = "none";
+                return;
+            }
+
+            // Đợi 300ms sau khi ngừng gõ mới gọi API (tránh spam)
+            timeoutId = setTimeout(async () => {
+                try {
+                    // Thêm &lat=10.77&lon=106.70 để ưu tiên tìm quanh khu vực TP.HCM trước
+                    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6&lat=10.7769&lon=106.7009`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    suggestionsBox.innerHTML = "";
+                    if (data.features && data.features.length > 0) {
+                        data.features.forEach(feature => {
+                            const props = feature.properties;
+                            const coords = feature.geometry.coordinates;
+                            
+                            // Ghép các phần của địa chỉ lại cho đẹp
+                            const parts = [props.name, props.street, props.district, props.city, props.state, props.country].filter(Boolean);
+                            const displayName = parts.join(", ");
+
+                            const div = document.createElement("div");
+                            div.textContent = displayName;
+                            div.style.padding = "12px";
+                            div.style.cursor = "pointer";
+                            div.style.borderBottom = "1px solid var(--border-color)";
+                            div.style.color = "var(--text-main)";
+                            div.style.fontSize = "14px";
+                            
+                            // Khi click vào gợi ý
+                            div.onclick = function () {
+                                addressInput.value = displayName;
+                                suggestionsBox.style.display = "none";
+                                
+                                // Tự động điền tọa độ luôn (Không cần bấm nút)
+                                var lat = coords[1];
+                                var lon = coords[0];
+                                latInput.value = lat.toFixed(6);
+                                lngInput.value = lon.toFixed(6);
+                                
+                                // Di chuyển bản đồ tới vị trí đó
+                                map.setView([lat, lon], 16);
+                                marker.setLatLng([lat, lon]);
+
+                                document.getElementById("geoMessage").innerText = "✅ Đã tự động lấy tọa độ!";
+                                document.getElementById("geoMessage").style.color = "var(--success)";
+                            };
+                            
+                            // Hiệu ứng hover
+                            div.onmouseover = () => div.style.background = "#334155";
+                            div.onmouseout = () => div.style.background = "transparent";
+
+                            suggestionsBox.appendChild(div);
+                        });
+                        suggestionsBox.style.display = "block";
+                    } else {
+                        suggestionsBox.style.display = "none";
+                    }
+                } catch (error) {
+                    console.error("Lỗi autocomplete:", error);
+                }
+            }, 300);
+        });
+
+        // Ẩn gợi ý khi click ra ngoài
+        document.addEventListener("click", function (e) {
+            if (e.target !== addressInput) {
+                suggestionsBox.style.display = "none";
+            }
+        });
+    </script>
+}

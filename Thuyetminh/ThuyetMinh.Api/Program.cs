@@ -8,27 +8,37 @@ using ThuyetMinh.Data.Models;
 using ThuyetMinh.Data.Repositories;
 using ThuyetMinh.Business.Services;
 using ThuyetMinh.Api.Middleware;
+using ThuyetMinh.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
-var connectionString = builder.Configuration.GetConnectionString("Default");
+var connectionString = builder.Configuration.GetConnectionString("SqlServerTest");
+
 if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("Chua cau hinh SQLite.");
-var databasePath = Path.Combine(builder.Environment.ContentRootPath, "congnghephanmem.db");
-var sqliteConnection = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connectionString)
 {
-    DataSource = databasePath
-};
-builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseSqlite(sqliteConnection.ToString()));
+    throw new InvalidOperationException("Chua cau hinh SQL Server.");
+}
 
+builder.Services.AddDbContext<AppDbContext, SqlServerAppDbContext>(o =>
+    o.UseSqlServer(connectionString));
 
+builder.Services.AddSingleton<DemoQrTokenStore>();
+builder.Services.AddScoped<IPaymentOrderRepository, PaymentOrderRepository>();
+builder.Services.AddScoped<IPaymentConfirmationService, PaymentConfirmationService>();
+builder.Services.AddScoped<IListeningService, ListeningService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IShopRepository, ShopRepository>();
 builder.Services.AddScoped<IShopSubmissionRepository, ShopSubmissionRepository>();
+builder.Services.AddScoped<IAnonymousVisitorRepository, AnonymousVisitorRepository>();
+builder.Services.AddScoped<IAnonymousVisitorService, AnonymousVisitorService>();
+builder.Services.AddScoped<IListeningBalanceRepository, ListeningBalanceRepository>();
 builder.Services.AddScoped<TranslationRepository>();
 builder.Services.AddScoped<TranslationService>();
+builder.Services.AddScoped<IMachineTranslationService, MachineTranslationService>();
+builder.Services.AddScoped<NarrationProcessingService>();
+builder.Services.AddScoped<ITtsService, TtsService>();
 builder.Services.AddScoped<LanguageRepository>();
 builder.Services.AddScoped<LanguageService>();
 builder.Services.AddScoped<AudioRepository>();
@@ -38,6 +48,7 @@ builder.Services.AddScoped<ProcessingJobService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IShopService, ShopService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddSingleton<OnlineUserService>();
 builder.Services.AddSingleton<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddAuthentication(options =>
@@ -62,8 +73,7 @@ builder.Services.AddAuthentication(options =>
     options.AccessDeniedPath = "/Login";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
 })
-.
-    AddJwtBearer(o =>
+.AddJwtBearer(o =>
     {
         o.TokenValidationParameters = new TokenValidationParameters
         {
@@ -118,6 +128,74 @@ builder.Services.AddSwaggerGen(c =>
 });
 var app = builder.Build();
 
+// DEMO classroom: expose only the visitor-facing routes through a public Quick Tunnel.
+// The tunnel forwards requests from localhost, so RemoteIpAddress alone CANNOT protect
+// local administrator endpoints. Public Host values are restricted before Swagger/auth.
+if (app.Environment.IsDevelopment())
+{
+    app.Use(async (context, next) =>
+    {
+        if (!DemoNetwork.IsDirectLocalRequest(context))
+        {
+            string host = context.Request.Host.Host;
+            if (!host.EndsWith(".trycloudflare.com", StringComparison.OrdinalIgnoreCase) && !string.Equals(host, app.Configuration["Demo:PublicHost"], StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+            // FULL-WEBSITE-NGROK-GROUP-TEST: allow the trusted ngrok host to reach
+            // Razor Pages and APIs, while retaining the site's normal authentication.
+            // Only enabled during a controlled group test with changed demo passwords.
+            if (app.Configuration.GetValue<bool>("Demo:AllowFullWebsiteOverNgrok") &&
+                string.Equals(host, app.Configuration["Demo:PublicHost"], StringComparison.OrdinalIgnoreCase))
+            {
+                // Developer tools are not required for group website testing.
+                if (context.Request.Path.StartsWithSegments("/swagger") ||
+                    context.Request.Path.StartsWithSegments("/Error"))
+                {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
+                await next();
+                return;
+            }
+            // NGROK-PUBLIC-QR-20261027: Dev-only public demo endpoints.
+            // The controller still validates each pending order and tm_visitor ownership.
+            if (app.Configuration.GetValue<bool>("Demo:EnablePublicQr") &&
+                string.Equals(host, app.Configuration["Demo:PublicHost"], StringComparison.OrdinalIgnoreCase) &&
+                ((context.Request.Path.StartsWithSegments("/api/payment") &&
+                  (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsPost(context.Request.Method))) ||
+                 (context.Request.Path == "/api/demo/qr/issue" &&
+                  HttpMethods.IsPost(context.Request.Method))))
+            {
+                await next();
+                return;
+            }
+            var path = context.Request.Path;
+            bool isGet = HttpMethods.IsGet(context.Request.Method);
+            bool isPost = HttpMethods.IsPost(context.Request.Method);
+            bool permitted = (isGet && (
+                path == "/" || path.StartsWithSegments("/payment") ||
+                path.StartsWithSegments("/Narration") ||
+                path.StartsWithSegments("/demo/qr/pay") ||
+                path.StartsWithSegments("/api/visitor/me") ||
+                path.StartsWithSegments("/api/public/shops") ||
+                path.StartsWithSegments("/css") || path.StartsWithSegments("/js") ||
+                path.StartsWithSegments("/lib") || path.StartsWithSegments("/images") ||
+                path.StartsWithSegments("/favicon.ico"))) ||
+                (isPost && (path.StartsWithSegments("/api/listening") ||
+                    path == "/api/demo/qr/redeem"));
+            if (!permitted)
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+        }
+        await next();
+    });
+}
+
+
 // Seed dữ liệu mẫu
 using (var scope = app.Services.CreateScope())
 {
@@ -137,18 +215,137 @@ using (var scope = app.Services.CreateScope())
 
         db.SaveChanges();
 
-        var shop = new Shop
+        var shops = new List<Shop>
         {
-            OwnerId = owner.Id,
-            Name = "Quán mẫu",
-            Address = "Hà Nội",
-            Latitude = 21.0,
-            Longitude = 105.8,
-            ActivationRadiusMeters = 50,
-            PublishStatus = PublishStatus.Draft
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Quán Ăn Gia Đình Phố",
+                Address = "123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM",
+                Latitude = 10.7743,
+                Longitude = 106.6978,
+                ActivationRadiusMeters = 50,
+                PublishStatus = PublishStatus.Approved
+            },
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Bún Chả Hà Nội 36 Phố",
+                Address = "36 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP.HCM",
+                Latitude = 10.7712,
+                Longitude = 106.6935,
+                ActivationRadiusMeters = 60,
+                PublishStatus = PublishStatus.Approved
+            },
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Phở Bò Sài Gòn Xưa",
+                Address = "150 Pasteur, Phường 6, Quận 3, TP.HCM",
+                Latitude = 10.7823,
+                Longitude = 106.6930,
+                ActivationRadiusMeters = 50,
+                PublishStatus = PublishStatus.Approved
+            },
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Ốc Đêm Sài Thành",
+                Address = "45 Võ Văn Tần, Phường 6, Quận 3, TP.HCM",
+                Latitude = 10.7790,
+                Longitude = 106.6915,
+                ActivationRadiusMeters = 80,
+                PublishStatus = PublishStatus.Approved
+            },
+            new Shop
+            {
+                OwnerId = owner.Id,
+                Name = "Cơm Tấm Ba Ghiền",
+                Address = "84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM",
+                Latitude = 10.7996,
+                Longitude = 106.6790,
+                ActivationRadiusMeters = 100,
+                PublishStatus = PublishStatus.Approved
+            }
         };
-        db.Shops.Add(shop);
+        db.Shops.AddRange(shops);
         db.SaveChanges();
+
+        // 3. Tạo sẵn 1 ShopSubmission đã duyệt cho mỗi quán (để API lấy content trả về dữ liệu)
+        foreach (var shop in shops)
+        {
+            var sub = new ShopSubmission
+            {
+                ShopId = shop.Id,
+                SubmittedById = owner.Id,
+                Name = shop.Name,
+                Address = shop.Address,
+                Latitude = shop.Latitude,
+                Longitude = shop.Longitude,
+                ActivationRadiusMeters = shop.ActivationRadiusMeters,
+                Description = "Quán ăn ngon, không gian sạch sẽ.",
+                Status = SubmissionStatus.Approved,
+                ReviewedById = admin.Id,
+                ReviewedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            db.ShopSubmissions.Add(sub);
+            db.SaveChanges();
+
+            // Gắn version đã duyệt vào Shop
+            shop.PublishedVersionId = sub.Id;
+            db.SaveChanges();
+        }
+    }
+
+    // Module B (Truc/Nhong): seed languages independently of existing users.
+    // Idempotent: do not overwrite translations or audio already created in the database.
+    if (!db.Languages.Any(x => x.Code == "vi"))
+        db.Languages.Add(new Language { Code = "vi", Name = "Tiếng Việt", IsActive = true });
+    if (!db.Languages.Any(x => x.Code == "en"))
+        db.Languages.Add(new Language { Code = "en", Name = "Tiếng Anh", IsActive = true });
+    if (!db.Languages.Any(x => x.Code == "zh"))
+        db.Languages.Add(new Language { Code = "zh", Name = "Tiếng Trung", IsActive = true });
+    if (!db.Languages.Any(x => x.Code == "km"))
+        db.Languages.Add(new Language { Code = "km", Name = "Tiếng Khmer", IsActive = true });
+    db.SaveChanges();
+
+    // Attach the audio demo only to a real, published shop version (never to an arbitrary Id).
+    var demoShop = db.Shops.FirstOrDefault(x =>
+        x.Name == "Quán Ăn Gia Đình Phố" && x.PublishStatus == PublishStatus.Approved);
+    var publishedVersionId = demoShop?.PublishedVersionId;
+    var viLanguage = db.Languages.FirstOrDefault(x => x.Code == "vi");
+    if (publishedVersionId != null && viLanguage != null)
+    {
+        var translation = db.Translations.FirstOrDefault(x =>
+            x.ShopSubmissionId == publishedVersionId && x.LanguageId == viLanguage.Id);
+        if (translation == null)
+        {
+            translation = new Translation
+            {
+                ShopSubmissionId = publishedVersionId.Value,
+                LanguageId = viLanguage.Id,
+                TranslatedText = "Chào mừng đến với Quán Ăn Gia Đình Phố. Quán chuyên các món ăn Việt truyền thống, không gian ấm cúng.",
+                Status = "Success"
+            };
+            db.Translations.Add(translation);
+            db.SaveChanges();
+        }
+
+        var demoAudioFile = Path.Combine(app.Environment.WebRootPath ??
+            Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "audio", "quan-mau.mp3");
+        if (File.Exists(demoAudioFile) && !db.Audios.Any(x => x.TranslationId == translation.Id))
+        {
+            db.Audios.Add(new Audio
+            {
+                TranslationId = translation.Id,
+                FilePath = "/audio/quan-mau.mp3",
+                DurationSeconds = 5,
+                Status = "Success"
+            });
+            db.SaveChanges();
+        }
     }
 }
 
@@ -159,8 +356,32 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
+// Do not expose paid MP3/audio from wwwroot before balance verification.
+// Production should stream private audio with authorization and metering.
+app.Use(async (context, next) =>
+{
+    string path = context.Request.Path.Value ?? string.Empty;
+    if (new[] { ".mp3", ".wav", ".ogg", ".m4a" }
+        .Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
+    {
+        var visitors = context.RequestServices.GetRequiredService<IAnonymousVisitorService>();
+        var db = context.RequestServices.GetRequiredService<AppDbContext>();
+        var visitor = await visitors.FindExistingAsync(context.Request.Cookies["tm_visitor"]);
+        bool allowed = visitor != null && await db.ListeningBalances
+            .AnyAsync(x => x.AnonymousVisitorId == visitor.Id && x.RemainingSeconds > 0);
+        if (!allowed)
+        {
+            context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
+            return;
+        }
+    }
+    await next();
+});
+app.UseStaticFiles();
 app.UseAuthentication();
+app.UseMiddleware<OnlineUserMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 app.MapRazorPages();
+app.MapGet("/", () => Results.Redirect("/payment"));
 app.Run();

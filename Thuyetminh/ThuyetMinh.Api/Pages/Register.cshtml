@@ -1,0 +1,118 @@
+@page
+@model ThuyetMinh.Api.Pages.RegisterModel
+@{
+    ViewData["Title"] = "Đăng ký";
+}
+
+<div class="login-box" style="max-width: 500px;">
+    <h2>Đăng ký Chủ quán</h2>
+    <p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 20px;">
+        (Dành cho chủ quán/địa điểm)
+    </p>
+
+    <form method="post">
+        <label>Tên đăng nhập</label>
+        <input asp-for="Input.Username" required minlength="3" placeholder="Ví dụ: owner2" style="width: 100%; padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main); font-size: 15px;" />
+
+        <label>Họ và tên</label>
+        <input asp-for="Input.FullName" placeholder="Ví dụ: Nguyễn Văn A" style="width: 100%; padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main); font-size: 15px;" />
+
+        <label>Số điện thoại</label>
+        <input asp-for="Input.PhoneNumber" type="tel" required pattern="^(0|\+84)(\s|\.)?((3[2-9])|(5[689])|(7[06-9])|(8[1-689])|(9[0-46-9]))(\d)(\s|\.)?(\d{3})(\s|\.)?(\d{3})$" title="Vui lòng nhập số điện thoại Việt Nam hợp lệ (10 số)" placeholder="Ví dụ: 0912345678" style="width: 100%; padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main); font-size: 15px;" />
+
+        <label>Địa chỉ</label>
+        
+        <select id="citySelect" asp-for="Input.City" required style="width: 100%; padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main); font-size: 15px; margin-bottom: 10px;">
+            <option value="">-- Chọn Tỉnh / Thành phố --</option>
+        </select>
+
+        <select id="wardSelect" asp-for="Input.Ward" required style="width: 100%; padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main); font-size: 15px; margin-bottom: 10px;">
+            <option value="">-- Chọn Phường / Xã --</option>
+        </select>
+
+        <input asp-for="Input.AddressLine" required placeholder="Số nhà, tên đường (Ví dụ: 123 Lê Lợi)" style="width: 100%; padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main); font-size: 15px;" />
+
+        <label>Mật khẩu</label>
+        <div class="password-wrapper">
+            <input asp-for="Input.Password" id="passwordInput" type="password" required minlength="6" placeholder="Tối thiểu 6 ký tự" style="width: 100%; padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main); font-size: 15px; padding-right: 45px;" />
+            <span class="toggle-icon" onclick="togglePassword('passwordInput', 'eye1')">
+                <svg id="eye1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </span>
+        </div>
+
+        <label>Xác nhận mật khẩu</label>
+        <div class="password-wrapper">
+            <input asp-for="Input.ConfirmPassword" id="confirmPasswordInput" type="password" required minlength="6" placeholder="Nhập lại mật khẩu" style="width: 100%; padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main); font-size: 15px; padding-right: 45px;" />
+            <span class="toggle-icon" onclick="togglePassword('confirmPasswordInput', 'eye2')">
+                <svg id="eye2" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </span>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Error))
+        {
+            <p class="error">@Model.Error</p>
+        }
+
+        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 24px;">Đăng ký</button>
+    </form>
+    
+    <div style="text-align: center; margin-top: 24px;">
+        <span style="color: var(--text-muted); font-size: 14px;">Đã có tài khoản?</span>
+        <a href="/Login" style="color: var(--primary); text-decoration: none; font-weight: 500;">Đăng nhập</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Hàm ẩn/hiện mật khẩu dùng chung
+        function togglePassword(inputId, iconId) {
+            var input = document.getElementById(inputId);
+            var icon = document.getElementById(iconId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+            } else {
+                input.type = "password";
+                icon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+            }
+        }
+
+        // Load Tỉnh/Thành
+        async function loadCities() {
+            try {
+                var response = await fetch('https://provinces.open-api.vn/api/v2/p/');
+                var data = await response.json();
+                var citySelect = document.getElementById("citySelect");
+                data.forEach(function(city) {
+                    var option = document.createElement("option");
+                    option.value = city.name;
+                    option.text = city.name;
+                    option.dataset.code = city.code;
+                    citySelect.appendChild(option);
+                });
+            } catch (error) { console.error("Lỗi tải Tỉnh/Thành:", error); }
+        }
+
+        // Load Phường/Xã khi chọn Tỉnh
+        document.getElementById("citySelect").addEventListener("change", async function() {
+            var cityCode = this.options[this.selectedIndex].dataset.code;
+            var wardSelect = document.getElementById("wardSelect");
+            wardSelect.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+            if (!cityCode) return;
+            try {
+                var response = await fetch(`https://provinces.open-api.vn/api/v2/p/${cityCode}?depth=2`);
+                var data = await response.json();
+                if (data && data.wards) {
+                    data.wards.forEach(function(ward) {
+                        var option = document.createElement("option");
+                        option.value = ward.name;
+                        option.text = ward.name;
+                        wardSelect.appendChild(option);
+                    });
+                }
+            } catch (error) { console.error("Lỗi tải Phường/Xã:", error); }
+        });
+
+        loadCities();
+    </script>
+}

@@ -9,6 +9,7 @@ public interface IShopRepository
     Task<List<Shop>> FindByOwnerIdAsync(long ownerId);
     Task<Shop?> FindByIdAndOwnerIdAsync(long id, long ownerId);
     Task<Shop?> FindByIdAsync(long id);
+    Task AddAsync(Shop shop);
     Task SaveChangesAsync();
 }
 
@@ -25,6 +26,12 @@ public class ShopRepository : IShopRepository
 
     public Task<Shop?> FindByIdAsync(long id) =>
         _db.Shops.FirstOrDefaultAsync(s => s.Id == id);
+
+    public async Task AddAsync(Shop shop)
+    {
+        _db.Shops.Add(shop);
+        await _db.SaveChangesAsync();
+    }
 
     public Task SaveChangesAsync() => _db.SaveChangesAsync();
 }

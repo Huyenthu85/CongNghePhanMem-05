@@ -8,10 +8,20 @@
     <h2>Đăng nhập</h2>
     <form method="post">
         <label>Tên đăng nhập</label>
-        <input asp-for="Username" required autofocus />
+        <input asp-for="Username" required autofocus placeholder="Nhập admin hoặc owner1" />
 
         <label>Mật khẩu</label>
-        <input asp-for="Password" type="password" required />
+        <div class="password-wrapper">
+            <input asp-for="Password" id="passwordInput" type="password" required placeholder="Nhập mật khẩu" />
+            
+            <!-- Icon con mắt -->
+            <span class="toggle-icon" id="toggleIcon" onclick="togglePassword()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </span>
+        </div>
 
         @if (!string.IsNullOrEmpty(Model.Error))
         {
@@ -20,4 +30,29 @@
 
         <button type="submit" class="btn-primary">Đăng nhập</button>
     </form>
+
+    <!-- THÊM PHẦN CHUYỂN HƯỚNG ĐĂNG KÝ TẠI ĐÂY -->
+    <div style="text-align: center; margin-top: 24px;">
+        <span style="color: var(--text-muted); font-size: 14px;">Chưa có tài khoản?</span>
+        <a href="/Register" style="color: var(--primary); text-decoration: none; font-weight: 500;">Đăng ký ngay</a>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        function togglePassword() {
+            var input = document.getElementById("passwordInput");
+            var icon = document.getElementById("toggleIcon");
+            
+            if (input.type === "password") {
+                input.type = "text";
+                // Đổi sang icon mắt nhắm (gạch chéo)
+                icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+            } else {
+                input.type = "password";
+                // Đổi lại icon mắt mở
+                icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+            }
+        }
+    </script>
+}

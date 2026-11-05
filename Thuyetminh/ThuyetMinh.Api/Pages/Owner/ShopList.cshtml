@@ -1,14 +1,24 @@
 @page
-@model ThuyetMinh.Api.Pages.Owner.ShopListModel
+@model CongNghePhanMem.Api.Pages.Owner.ShopListModel
 @{
     ViewData["Title"] = "Quán của tôi";
 }
 
-<h2>Quán của tôi</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2 style="margin: 0; border: none;">Quán của tôi</h2>
+    <a href="/Owner/ShopForm" class="btn btn-primary" style="margin: 0;">+ Thêm quán mới</a>
+</div>
+
+@if (Model.HasRejectedSubmissions)
+{
+    <div class="error" style="margin-bottom: 24px;">
+        ⚠️ <strong>Cảnh báo:</strong> Bạn có bài gửi cho quán bị <strong>Từ chối</strong>. Vui lòng kiểm tra mục "Bài gửi" để xem lý do và gửi lại.
+    </div>
+}
 
 @if (!Model.Shops.Any())
 {
-    <p>Bạn chưa có quán nào.</p>
+    <p>Bạn chưa có quán nào. Hãy bấm "Thêm quán mới" để bắt đầu.</p>
 }
 else
 {
@@ -47,8 +57,8 @@ else
                     }
                 </td>
                 <td>
-                    <a class="btn btn-primary" href="/Owner/ShopForm?id=@s.Id">Chỉnh sửa</a>
-                    <a class="btn btn-secondary" href="/Owner/Submissions?id=@s.Id">Bài gửi</a>
+                    <a class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;" href="/Owner/ShopForm?id=@s.Id">Chỉnh sửa</a>
+                    <a class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;" href="/Owner/Submissions?id=@s.Id">Bài gửi</a>
                 </td>
             </tr>
         }

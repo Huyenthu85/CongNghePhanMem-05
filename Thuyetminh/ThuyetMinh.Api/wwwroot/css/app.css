@@ -1,115 +1,390 @@
+/* ============================================================
+   Quán Thuyết Minh
+   ============================================================ */
+
+   :root {
+    --bg-dark: #0f172a;         /* Nền tối */
+    --card-bg: #1e293b;         /* Nền thẻ */
+    --card-bg-hover: #334155;
+    --primary: #06b6d4;         /* Xanh ngọc (Cyan) */
+    --primary-hover: #0891b2;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+    
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -1px rgba(0,0,0,0.2);
+    --shadow-glow: 0 0 15px rgba(6, 182, 212, 0.4);
+    --radius: 16px;
+    --radius-sm: 8px;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #f4f6f8;
-    color: #222;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-dark);
+    background-image: radial-gradient(circle at top right, rgba(6, 182, 212, 0.15) 0%, transparent 40%),
+                      radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
+    background-attachment: fixed;
+    color: var(--text-main);
     min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
 }
 
+/* ---------- Header ---------- */
+
 header {
-    background: #2c3e50;
-    color: white;
-    padding: 12px 24px;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 header nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 24px;
     display: flex;
     gap: 20px;
     align-items: center;
 }
 
-header nav a {
-    color: white;
+header nav .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+}
+
+header nav .brand span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--primary), var(--success));
+    border-radius: 10px;
+    color: #fff;
+    font-size: 18px;
+}
+
+header nav a.nav-link {
+    color: var(--text-muted);
     text-decoration: none;
     font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 20px;
+    transition: all 0.2s ease;
 }
 
-header nav a:hover { text-decoration: underline; }
+header nav a.nav-link:hover {
+    color: var(--text-main);
+    background: var(--card-bg);
+}
+
+header nav .user-info {
+    margin-left: auto;
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    background: rgba(6, 182, 212, 0.1);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    border-radius: 20px;
+}
+
+header nav button {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin: 0;
+    line-height: 1.5;
+}
+
+header nav button:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+header nav form {
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+/* ---------- Main Content (Card) ---------- */
 
 main {
-    max-width: 900px;
-    margin: 24px auto;
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    max-width: 1000px;
+    margin: 40px auto;
+    background: var(--card-bg);
+    padding: 40px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    animation: fadeIn 0.4s ease-out;
 }
 
-h1, h2 { margin-bottom: 16px; color: #2c3e50; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+h1, h2 {
+    margin-bottom: 24px;
+    color: var(--text-main);
+    font-weight: 600;
+    letter-spacing: -0.5px;
+}
+
+h1 { font-size: 28px; }
+h2 { font-size: 24px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+
+/* ---------- Forms ---------- */
 
 label {
     display: block;
-    margin-top: 12px;
-    margin-bottom: 4px;
+    margin-top: 20px;
+    margin-bottom: 8px;
     font-weight: 500;
     font-size: 14px;
+    color: var(--text-muted);
 }
 
-input, textarea, select {
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
     width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
+    padding: 12px 16px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-size: 15px;
     font-family: inherit;
+    transition: all 0.2s ease;
+    appearance: none; /* Xoá giao diện mặc định của trình duyệt */
+    
+    /* Mũi tên tuỳ chỉnh cho thẻ Select */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
 }
 
-textarea { min-height: 80px; resize: vertical; }
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+}
+
+textarea { 
+    min-height: 100px; 
+    background-image: none; /* Textarea không cần mũi tên */
+}
+
+/* ---------- Password Toggle (Icon Version) ---------- */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    padding-right: 45px; /* Chừa chỗ cho icon con mắt */
+}
+
+.toggle-icon {
+    position: absolute;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+
+.toggle-icon:hover {
+    color: var(--primary);
+}
+
+/* ---------- Buttons ---------- */
 
 button, .btn {
-    display: inline-block;
-    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 24px;
     border: none;
-    border-radius: 4px;
+    border-radius: 20px;
     cursor: pointer;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     text-decoration: none;
-    background: #3498db;
-    color: white;
-    margin-top: 12px;
+    background: var(--primary);
+    color: #0f172a;
+    margin-top: 16px;
     margin-right: 8px;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: none; /* Buttons không cần mũi tên */
 }
 
-button:hover, .btn:hover { opacity: 0.9; }
-.btn-primary { background: #3498db; }
-.btn-success { background: #27ae60; }
-.btn-danger { background: #e74c3c; }
-.btn-secondary { background: #95a5a6; }
+button:hover, .btn:hover {
+    background: var(--primary-hover);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+    text-decoration: none;
+    color: #fff;
+}
+
+.btn-primary { background: var(--primary); color: #0f172a; }
+.btn-primary:hover { color: #fff; }
+
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+.btn-secondary:hover { background: var(--card-bg-hover); color: var(--text-main); border-color: var(--text-muted); }
+
+/* ---------- Tables ---------- */
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 16px;
+    margin-top: 20px;
 }
 
 th, td {
     text-align: left;
-    padding: 8px 12px;
-    border-bottom: 1px solid #eee;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
     font-size: 14px;
 }
 
-th { background: #f8f9fa; font-weight: 600; }
+th {
+    background: rgba(15, 23, 42, 0.4);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
 
-.error { color: #e74c3c; margin-top: 8px; font-size: 14px; }
-.success { color: #27ae60; margin-top: 8px; font-size: 14px; }
+tbody tr { transition: background 0.2s; }
+tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
+
+/* ---------- Badges (Trạng thái) ---------- */
 
 .badge {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
+    padding: 4px 12px;
+    border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
-.badge-draft    { background: #ecf0f1; color: #7f8c8d; }
-.badge-pending  { background: #fef3c7; color: #92400e; }
-.badge-approved { background: #d1fae5; color: #065f46; }
-.badge-rejected { background: #fee2e2; color: #991b1b; }
+.badge-draft { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+.badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+.badge-approved { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+.badge-rejected { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+/* ---------- Messages ---------- */
+
+.error {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    margin-top: 16px;
+    border-left: 4px solid var(--danger);
+}
+
+.success {
+    color: var(--success);
+    background: rgba(16, 185, 129, 0.1);
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    margin-top: 16px;
+    border-left: 4px solid var(--success);
+}
+
+/* ---------- Login Box ---------- */
 
 .login-box {
-    max-width: 400px;
+    max-width: 420px;
     margin: 80px auto;
+    padding: 40px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+    border: 1px solid var(--border-color);
+}
+
+.login-box h2 {
+    text-align: center;
+    border: none;
+    margin-bottom: 32px;
+    font-size: 26px;
+}
+
+.login-box button {
+    width: 100%;
+    margin-top: 32px;
+    padding: 14px;
+    font-size: 16px;
+}
+
+/* ---------- Fix Autofill Background ---------- */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 30px #1e293b inset !important;
+    -webkit-text-fill-color: white !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+    main { margin: 16px; padding: 24px; }
+    header nav { flex-wrap: wrap; padding: 12px 16px; }
+    header nav .user-info { margin-left: 0; }
 }

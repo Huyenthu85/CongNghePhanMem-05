@@ -1,57 +1,55 @@
 @page
-@model ThuyetMinh.Api.Pages.Owner.ShopListModel
+@model ThuyetMinh.Api.Pages.Owner.SubmissionsModel
 @{
-    ViewData["Title"] = "Quán của tôi";
+    ViewData["Title"] = "Bài gửi của tôi";
 }
 
-<h2>Quán của tôi</h2>
+<h2>Bài gửi cho quán</h2>
+<p style="color:var(--text-muted); font-size:14px;">Quán: <strong>@Model.ShopName</strong></p>
 
-@if (!Model.Shops.Any())
+@if (!Model.Submissions.Any())
 {
-    <p>Bạn chưa có quán nào.</p>
+    <p>Chưa có bài gửi nào.</p>
 }
 else
 {
     <table>
         <thead>
             <tr>
-                <th>Tên quán</th>
-                <th>Địa chỉ</th>
-                <th>Bán kính (m)</th>
+                <th>Ngày gửi</th>
+                <th>Tên</th>
                 <th>Trạng thái</th>
-                <th></th>
+                <th>Lý do từ chối</th>
             </tr>
         </thead>
         <tbody>
-        @foreach (var s in Model.Shops)
+        @foreach (var s in Model.Submissions)
         {
             <tr>
+                <td>@s.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
                 <td>@s.Name</td>
-                <td>@s.Address</td>
-                <td>@s.ActivationRadiusMeters</td>
                 <td>
-                    @switch (s.PublishStatus)
+                    @switch (s.Status)
                     {
-                        case ThuyetMinh.Data.Models.PublishStatus.Draft:
+                        case ThuyetMinh.Data.Models.SubmissionStatus.Draft:
                             <span class="badge badge-draft">Nháp</span>
                             break;
-                        case ThuyetMinh.Data.Models.PublishStatus.Pending:
+                        case ThuyetMinh.Data.Models.SubmissionStatus.Pending:
                             <span class="badge badge-pending">Chờ duyệt</span>
                             break;
-                        case ThuyetMinh.Data.Models.PublishStatus.Approved:
+                        case ThuyetMinh.Data.Models.SubmissionStatus.Approved:
                             <span class="badge badge-approved">Đã duyệt</span>
                             break;
-                        case ThuyetMinh.Data.Models.PublishStatus.Rejected:
+                        case ThuyetMinh.Data.Models.SubmissionStatus.Rejected:
                             <span class="badge badge-rejected">Bị từ chối</span>
                             break;
                     }
                 </td>
-                <td>
-                    <a class="btn btn-primary" href="/Owner/ShopForm?id=@s.Id">Chỉnh sửa</a>
-                    <a class="btn btn-secondary" href="/Owner/Submissions?id=@s.Id">Bài gửi</a>
-                </td>
+                <td>@(s.RejectionReason ?? "—")</td>
             </tr>
         }
         </tbody>
     </table>
 }
+
+<a class="btn btn-secondary" href="/Owner/ShopList">Quay lại</a>
