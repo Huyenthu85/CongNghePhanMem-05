@@ -5,7 +5,7 @@ namespace ThuyetMinh.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public AppDbContext(DbContextOptions options) : base(options) { }
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Shop> Shops => Set<Shop>();
@@ -147,7 +147,10 @@ public class AppDbContext : DbContext
         b.Entity<ListeningSession>()
             .HasIndex(x => x.AnonymousVisitorId)
             .IsUnique()
-            .HasFilter("\"Status\" <> 'Ended'");
+            .HasFilter(
+    Database.IsSqlServer()
+        ? "[Status] <> 'Ended'"
+        : "\"Status\" <> 'Ended'");
 
         b.Entity<ListeningSession>()
             .ToTable(t => t.HasCheckConstraint(
@@ -179,7 +182,10 @@ public class AppDbContext : DbContext
         b.Entity<ListeningTransaction>()
             .HasIndex(x => x.PaymentOrderId)
             .IsUnique()
-            .HasFilter("\"PaymentOrderId\" IS NOT NULL");
+            .HasFilter(
+    Database.IsSqlServer()
+        ? "[PaymentOrderId] IS NOT NULL"
+        : "\"PaymentOrderId\" IS NOT NULL");
 
         b.Entity<ListeningTransaction>()
             .ToTable(t =>
@@ -189,7 +195,9 @@ public class AppDbContext : DbContext
                     "BalanceAfterSeconds >= 0");
                 t.HasCheckConstraint(
                     "CK_ListeningTransaction_Change",
-                    "(\"Type\" = 'PaymentCredit' AND \"ChangeSeconds\" > 0 AND \"PaymentOrderId\" IS NOT NULL AND \"ListeningSessionId\" IS NULL) OR (\"Type\" = 'ListeningDebit' AND \"ChangeSeconds\" < 0 AND \"ListeningSessionId\" IS NOT NULL AND \"PaymentOrderId\" IS NULL)");
+                    (Database.IsSqlServer()
+    ? "([Type] = 'PaymentCredit' AND [ChangeSeconds] > 0 AND [PaymentOrderId] IS NOT NULL AND [ListeningSessionId] IS NULL) OR ([Type] = 'ListeningDebit' AND [ChangeSeconds] < 0 AND [ListeningSessionId] IS NOT NULL AND [PaymentOrderId] IS NULL)"
+    : "(\"Type\" = 'PaymentCredit' AND \"ChangeSeconds\" > 0 AND \"PaymentOrderId\" IS NOT NULL AND \"ListeningSessionId\" IS NULL) OR (\"Type\" = 'ListeningDebit' AND \"ChangeSeconds\" < 0 AND \"ListeningSessionId\" IS NOT NULL AND \"PaymentOrderId\" IS NULL)"));
             });
 
         b.Entity<Language>().HasData(

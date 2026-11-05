@@ -9,11 +9,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const spokenText = document.querySelector(".tour-description p")?.textContent?.trim() || "Chào mừng bạn đến với địa điểm tham quan.";
     const synth = window.speechSynthesis;
     let sessionId = null, playing = false, paused = false, updating = false, mode = null;
+    let authorizingAudio = false;
     let timer = null, utterance = null;
     const format = s => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
+    const isLocalPreview =
+    (location.hostname === "localhost" ||
+     location.hostname === "127.0.0.1") &&
+    new URLSearchParams(location.search).get("preview") === "1";
     function showBalance(seconds) {
         secondsEl.textContent = format(seconds);
-        if (seconds <= 0) {
+        if (seconds <= 0 && !isLocalPreview) {
             stopLocal();
             statusEl.textContent = "Đã hết thời lượng. Vui lòng mua thêm để tiếp tục.";
             setTimeout(() => window.location.replace("/payment"), 900);
@@ -86,12 +91,20 @@ document.addEventListener("DOMContentLoaded", () => {
             if (mode === "audio" && playing) return;
             if (!nativeAudio.currentSrc) return;
             // Pause pending browser playback until the server authorizes this session.
+            authorizingAudio = true;
             nativeAudio.pause();
-            if (mode === "speech") await finish();
-            const ok = await begin("audio");
-            if (ok) nativeAudio.play().catch(() => { void finish(); });
+            try {
+                if (mode === "speech") await finish();
+                const ok = await begin("audio");
+                if (ok) {
+                    await nativeAudio.play().catch(() => { void finish(); });
+                }
+            } finally {
+                authorizingAudio = false;
+            }
         });
         nativeAudio.addEventListener("pause", () => {
+            if (authorizingAudio) return;
             if (mode === "audio" && sessionId && !nativeAudio.ended) {
                 paused = true; void change("pause");
             }

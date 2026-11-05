@@ -48,14 +48,15 @@ public class ListeningController : ControllerBase
         return Ok(session);
     }
 
-    [HttpPost("sessions/{sessionId:long}/{action}")]
+    [HttpPost("sessions/{sessionId:long}/{operation}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Update(long sessionId, string action)
+    public async Task<IActionResult> Update(long sessionId, string operation)
     {
-        if (action is not ("heartbeat" or "pause" or "resume" or "end")) return NotFound();
+        if (operation is not ("heartbeat" or "pause" or "resume" or "end"))
+            return NotFound();
         var id = await VisitorIdAsync();
         if (id == null) return Unauthorized();
-        var snapshot = await _listening.UpdateAsync(id.Value, sessionId, action);
+        var snapshot = await _listening.UpdateAsync(id.Value, sessionId, operation);
         if (snapshot == null) return NotFound();
         return Ok(snapshot);
     }
