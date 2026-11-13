@@ -45,5 +45,18 @@
     </main>
     
     @await RenderSectionAsync("Scripts", required: false)
+<!-- ONLINE-PRESENCE-HEARTBEAT: only authenticated sessions -->
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <script>
+    (() => {
+        const ping = () => fetch('/presence/ping', {
+            method: 'POST', credentials: 'same-origin', cache: 'no-store'
+        }).catch(() => {});
+        ping();
+        setInterval(ping, 15000);
+    })();
+    </script>
+}
 </body>
 </html>
