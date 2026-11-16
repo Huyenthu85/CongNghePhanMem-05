@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nativeAudio = document.querySelector(".audio-controls audio");
     const antiForgery = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
     const shopId = Number(document.body.dataset.shopId || 0);
+    const gpsRequired = document.body.dataset.requireGps === "true";
     const spokenText = document.querySelector(".tour-description p")?.textContent?.trim() || "Chào mừng bạn đến với địa điểm tham quan.";
     const synth = window.speechSynthesis;
     let sessionId = null, playing = false, paused = false, updating = false, mode = null;
@@ -16,6 +17,26 @@ document.addEventListener("DOMContentLoaded", () => {
     (location.hostname === "localhost" ||
      location.hostname === "127.0.0.1") &&
     new URLSearchParams(location.search).get("preview") === "1";
+    async function locationPayload() {
+        const directLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+        if (!gpsRequired || directLocal) return {};
+        if (!navigator.geolocation) throw new Error("Trình duyệt không hỗ trợ GPS.");
+
+        const point = await new Promise((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 5000
+            }));
+
+        return {
+            latitude: point.coords.latitude,
+            longitude: point.coords.longitude,
+            accuracyMeters: point.coords.accuracy,
+            capturedAt: new Date(point.timestamp).toISOString()
+        };
+    }
+
     function showBalance(seconds) {
         secondsEl.textContent = format(seconds);
         if (seconds <= 0 && !isLocalPreview) {
@@ -47,7 +68,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!sessionId || updating) return;
         updating = true;
         try {
-            const data = await api(`/api/listening/sessions/${sessionId}/${action}`);
+            const payload = (action === "heartbeat" || action === "resume")
+                ? await locationPayload() : {};
+            const data = await api(`/api/listening/sessions/${sessionId}/${action}`, payload);
             showBalance(data.remainingSeconds);
             if (data.status === "Ended") {
                 stopLocal(); sessionId = null;
@@ -56,6 +79,13 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (e) {
             statusEl.textContent = "Mất kết nối tính thời lượng: " + e.message;
             stopLocal();
+            if (gpsRequired && sessionId && (action === "heartbeat" || action === "resume")) {
+                try {
+                    await api(`/api/listening/sessions/${sessionId}/pause`);
+                } catch {
+                    /* Mat mang: can kiem tra lai trang thai phien khi ket noi tro lai. */
+                }
+            }
         } finally { updating = false; }
     }
     async function begin(which) {
@@ -64,7 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return false;
         }
         try {
-            const result = await api("/api/listening/start", { shopId });
+            const payload = await locationPayload();
+            const result = await api("/api/listening/start", { shopId, ...payload });
             sessionId = result.sessionId; playing = true; paused = false; mode = which;
             showBalance(result.remainingSeconds);
             statusEl.textContent = "Đang phát · thời lượng được tính bởi backend.";
@@ -85,6 +116,53 @@ document.addEventListener("DOMContentLoaded", () => {
         sessionId = null;
         stopLocal();
     }
+    // AUTO-GPS-AUDIO-20261114
+    // Start a backend session before attempting audible playback.
+    let attemptedAudioSource = null;
+    let autoStarting = false;
+
+    async function tryAutoAudio() {
+        const source = nativeAudio?.getAttribute("src");
+
+        if (!source || !shopId || isLocalPreview ||
+            autoStarting || source === attemptedAudioSource ||
+            sessionId || playing) return;
+
+        attemptedAudioSource = source;
+        autoStarting = true;
+
+        try {
+            // begin() performs GPS validation through the listening API.
+            const ok = await begin("audio");
+            if (!ok) return;
+
+            try {
+                await nativeAudio.play();
+            } catch (error) {
+                // Never keep an active billable session after autoplay fails.
+                await finish();
+
+                statusEl.textContent = error?.name === "NotAllowedError"
+                    ? "Trình duyệt chặn phát tự động. Nhấn Play trên trình phát để nghe."
+                    : "Không thể tự phát MP3: " +
+                      (error?.message || "Không rõ lỗi");
+            }
+        } finally {
+            autoStarting = false;
+        }
+    }
+
+    document.addEventListener("tm:audio-ready", event => {
+        if (Number(event.detail?.shopId) === shopId) {
+            void tryAutoAudio();
+        }
+    });
+
+    // Handle audio that became ready before this listener was attached.
+    if (nativeAudio?.getAttribute("src")) {
+        void tryAutoAudio();
+    }
+
     if (nativeAudio) {
         nativeAudio.addEventListener("play", async () => {
             if (mode === "audio" && paused) { paused = false; await change("resume"); return; }

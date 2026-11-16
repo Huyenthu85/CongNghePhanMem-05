@@ -12,7 +12,7 @@
     <title>Thuyết minh đa ngôn ngữ</title>
     <link rel="stylesheet" href="/css/narration.css" />
 </head>
-<body data-shop-id="0">
+<body data-shop-id="0" data-require-gps="@(Model.RequireGps ? "true" : "false")">
 @Html.AntiForgeryToken()
 <div class="tour-page">
     <header class="tour-header">
@@ -125,6 +125,35 @@
         { slug:'com-tam-ba-ghien', shopId:null, name:'Cơm Tấm Ba Ghiền', address:'84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM', lat:10.7996, lon:106.6790, desc:'Cơm tấm sườn nướng mật ong, ăn kèm chả trứng và nước mắm chua ngọt.', image:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1100&q=80' }
     ];
     const approvedShops = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApprovedShops, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)));
+    // Synchronize approved database shops with the existing cards.
+    for (const item of approvedShops) {
+        const existing = shops.find(x =>
+            x.name === item.name && x.address === item.address);
+
+        if (existing) {
+            existing.shopId = item.id;
+            existing.lat = item.latitude;
+            existing.lon = item.longitude;
+            continue;
+        }
+
+        shops.push({
+            slug: `approved-${item.id}`,
+            shopId: item.id,
+            name: item.name,
+            address: item.address,
+            lat: item.latitude,
+            lon: item.longitude,
+            desc: 'Địa điểm đã được duyệt trong hệ thống.',
+            image: shops[0].image
+        });
+    }
+
+    const factCount = document.querySelector('.hero-facts strong');
+    if (factCount) {
+        factCount.textContent = String(shops.length).padStart(2, '0');
+    }
+
     const $ = id => document.getElementById(id);
     const escapeHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const params = new URLSearchParams(location.search);
@@ -145,6 +174,124 @@
 
 
     if (!selected) {
+        // AUTO GPS: find the nearest approved shop inside its activation radius.
+        if (navigator.geolocation && params.get('preview') !== '1') {
+            let navigating = false;
+
+            const distanceMeters = (lat1, lon1, lat2, lon2) => {
+                const rad = n => n * Math.PI / 180;
+                const dLat = rad(lat2 - lat1);
+                const dLon = rad(lon2 - lon1);
+
+                const h = Math.sin(dLat / 2) ** 2 +
+                    Math.cos(rad(lat1)) * Math.cos(rad(lat2)) *
+                    Math.sin(dLon / 2) ** 2;
+
+                return 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+            };
+
+            const watcher = navigator.geolocation.watchPosition(pos => {
+                if (navigating) return;
+
+                const {latitude, longitude, accuracy} = pos.coords;
+
+                if (![latitude, longitude, accuracy].every(Number.isFinite))
+                    return;
+
+                let closest = null;
+
+                for (const site of approvedShops) {
+                    const radius = Number(site.activationRadiusMeters);
+                    const shop = shops.find(x =>
+                        Number(x.shopId) === Number(site.id));
+
+                    if (!shop || !Number.isFinite(radius) || radius <= 0)
+                        continue;
+
+                    const meters = distanceMeters(
+                        latitude, longitude,
+                        site.latitude, site.longitude
+                    );
+
+                    if (meters > radius ||
+                        accuracy > Math.max(100, radius))
+                        continue;
+
+                    if (!closest || meters < closest.meters) {
+                        closest = {shop, meters};
+                    }
+                }
+
+                // GPS-AUTO-REENTRY-GUARD
+                // Trigger automatically once per zone entry, not on every page visit.
+                const latchKey = "tm_auto_gps_last_shop";
+                let lastShopId;
+
+                try {
+                    lastShopId = sessionStorage.getItem(latchKey);
+                } catch {
+                    // If storage is unavailable, keep manual navigation.
+                    return;
+                }
+
+                if (lastShopId) {
+                    const lastSite = approvedShops.find(x =>
+                        String(x.id) === lastShopId);
+
+                    if (lastSite) {
+                        const radius = Number(lastSite.activationRadiusMeters);
+                        const distance = distanceMeters(
+                            latitude, longitude,
+                            lastSite.latitude, lastSite.longitude
+                        );
+
+                        // Use a margin to avoid GPS jitter near the boundary.
+                        const exitThreshold = radius + Math.max(50, accuracy);
+
+                        if (!Number.isFinite(radius) ||
+                            !Number.isFinite(distance) ||
+                            accuracy > Math.max(100, radius) ||
+                            distance <= exitThreshold) {
+                            return;
+                        }
+                    }
+
+                    try {
+                        sessionStorage.removeItem(latchKey);
+                    } catch {
+                        return;
+                    }
+                }
+
+                if (closest) {
+                    try {
+                        sessionStorage.setItem(
+                            latchKey,
+                            String(closest.shop.shopId)
+                        );
+                    } catch {
+                        return;
+                    }
+
+                    navigating = true;
+                    navigator.geolocation.clearWatch(watcher);
+
+                    window.location.replace(
+                        '/Narration?place=' +
+                        encodeURIComponent(closest.shop.slug)
+                    );
+                }
+            }, () => {}, {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 20000
+            });
+
+            window.addEventListener('pagehide', () => {
+                navigator.geolocation.clearWatch(watcher);
+            }, {once: true});
+        }
+
         $('listing-view').hidden = false;
         $('detail-view').hidden = true;
         $('shop-grid').innerHTML = shops.map(s => `
@@ -262,6 +409,10 @@
             }
             audio.load();
             $('audio-status').textContent = 'Sẵn sàng phát';
+
+            document.dispatchEvent(new CustomEvent('tm:audio-ready', {
+                detail: {shopId: approvedShop.id}
+            }));
         } catch(e) {
             if (requestId === requestSeq) { setStatus(e.message); $('audio-status').textContent = 'Chưa có audio'; $('narration-text-status').textContent = e.message; }
         }

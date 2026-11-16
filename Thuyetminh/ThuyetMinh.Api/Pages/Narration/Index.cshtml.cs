@@ -13,6 +13,9 @@ public sealed class ApprovedShopInfo
     public long Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public double ActivationRadiusMeters { get; set; }
 }
 
 public class IndexModel : PageModel
@@ -22,19 +25,22 @@ public class IndexModel : PageModel
     private readonly IListeningBalanceRepository _balanceRepository;
     private readonly AppDbContext _db;
     private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
 
+    public bool RequireGps => _configuration.GetValue<bool>("Listening:RequireGps");
     public long ShopId { get; private set; }
     public long RemainingSeconds { get; private set; }
     public List<ApprovedShopInfo> ApprovedShops { get; private set; } = new();
 
     public IndexModel(IAnonymousVisitorService visitorService,
         IListeningBalanceRepository balanceRepository, AppDbContext db,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment, IConfiguration configuration)
     {
         _visitorService = visitorService;
         _balanceRepository = balanceRepository;
         _db = db;
         _environment = environment;
+        _configuration = configuration;
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -73,7 +79,10 @@ public class IndexModel : PageModel
             {
                 Id = x.Id,
                 Name = x.Name,
-                Address = x.Address
+                Address = x.Address,
+                Latitude = x.Latitude,
+                Longitude = x.Longitude,
+                ActivationRadiusMeters = x.ActivationRadiusMeters
             })
             .ToListAsync();
         ShopId = ApprovedShops.FirstOrDefault()?.Id ?? 0;

@@ -349,6 +349,8 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+GpsTestSeeder.Run(app);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
