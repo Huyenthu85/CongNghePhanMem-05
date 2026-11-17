@@ -1,0 +1,45 @@
+.tm-language-select {
+    flex: 0 0 auto;
+    max-width: 45%;
+    min-height: 38px;
+    padding: 6px 10px;
+    border: 1px solid #dce9e5;
+    border-radius: 8px;
+    background: white;
+    color: #173447;
+    font: inherit;
+    font-size: 14px;
+}
+.tm-language-dialog {
+    width: min(92vw, 420px);
+    max-height: 90dvh;
+    overflow: auto;
+    padding: 24px;
+    border: 1px solid #dce9e5;
+    border-radius: 18px;
+    color: #173447;
+    background: white;
+    box-shadow: 0 16px 60px #163b4c44;
+}
+.tm-language-dialog::backdrop { background: #142e3dcc; }
+.tm-language-dialog h2 { margin: 0 0 18px; font-size: 22px; }
+.tm-language-dialog button {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    min-height: 48px;
+    padding: 10px;
+    border: 1px solid #dce9e5;
+    border-radius: 10px;
+    background: #f2f8f6;
+    color: #173447;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.tm-language-dialog button:focus-visible { outline: 3px solid #07816f; }
+@media (max-width: 800px) {
+    .site-header-inner .site-header-label { display: none; }
+    .tour-header .tour-nav { display: none; }
+    .tour-header .header-inner { gap: 10px; }
+}

@@ -1038,3 +1038,125 @@ button {
     font-size: 16px;
   }
 }
+
+/* TM-DESCRIPTION-TOGGLE */
+.shop-card-body [data-original-description],
+#hero-description {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+
+#shop-description {
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+#shop-description.tm-story-collapsed {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
+}
+
+.tm-story-toggle {
+    display: inline-block;
+    padding: 7px 0;
+    border: 0;
+    background: transparent;
+    color: var(--teal);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tm-story-toggle[hidden] {
+    display: none !important;
+}
+
+/* Remaining listening time on the header */
+.header-balance {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 0 0 auto;
+    gap: 3px;
+    padding: 8px 16px;
+    background: #edf6f5;
+    border: 1px solid #d5e9e6;
+    border-radius: 10px;
+}
+
+.header-balance small {
+    font-size: 10px;
+    font-weight: 700;
+    color: #52747c;
+}
+
+.header-balance strong {
+    font-size: 20px;
+    font-weight: 800;
+    color: #173447;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 600px) {
+    .tour-header .header-inner {
+        flex-wrap: wrap;
+        padding: 10px 0;
+    }
+
+    .header-balance {
+        order: 3;
+        flex: 1 0 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+    }
+}
+/* Compact header balance */
+.header-balance {
+    height: 38px;
+    min-width: 104px;
+    padding: 3px 10px;
+    gap: 2px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.header-balance small {
+    font-size: 9px;
+    line-height: 11px;
+}
+
+.header-balance strong {
+    font-size: 15px;
+    line-height: 17px;
+}
+
+@media (max-width: 600px) {
+    .header-balance {
+        order: 0;
+        flex: 0 0 auto;
+        flex-direction: column;
+    }
+}
+
+.tour-header .header-inner {
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.tour-header .tour-nav {
+    margin-inline: auto;
+}
+
+@media (max-width: 800px) {
+    .header-balance {
+        margin-left: auto;
+    }
+}

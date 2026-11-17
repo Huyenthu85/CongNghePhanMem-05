@@ -38,6 +38,7 @@ builder.Services.AddScoped<TranslationRepository>();
 builder.Services.AddScoped<TranslationService>();
 builder.Services.AddScoped<IMachineTranslationService, MachineTranslationService>();
 builder.Services.AddScoped<NarrationProcessingService>();
+builder.Services.AddHostedService<ThuyetMinh.Api.Workers.NarrationProcessingWorker>();
 builder.Services.AddScoped<ITtsService, TtsService>();
 builder.Services.AddScoped<LanguageRepository>();
 builder.Services.AddScoped<LanguageService>();
@@ -60,10 +61,10 @@ builder.Services.AddAuthentication(options =>
 {
     options.ForwardDefaultSelector = context =>
     {
-        // Nếu request bắt đầu bằng /api/ → dùng JWT
+        // Náº¿u request báº¯t Ä‘áº§u báº±ng /api/ â†’ dĂ¹ng JWT
         if (context.Request.Path.StartsWithSegments("/api"))
             return JwtBearerDefaults.AuthenticationScheme;
-        // Ngược lại → dùng Cookie
+        // NgÆ°á»£c láº¡i â†’ dĂ¹ng Cookie
         return "Cookies";
     };
 })
@@ -90,7 +91,7 @@ builder.Services.AddAuthentication(options =>
             {
                 var raw = ctx.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
                 var svc = ctx.HttpContext.RequestServices.GetRequiredService<ITokenService>();
-                if (svc.IsBlacklisted(raw)) ctx.Fail("Token đã bị thu hồi");
+                if (svc.IsBlacklisted(raw)) ctx.Fail("Token Ä‘Ă£ bá»‹ thu há»“i");
                 return Task.CompletedTask;
             }
         };
@@ -109,7 +110,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Nhập: Bearer {token} (không có dấu ngoặc nhọn)"
+        Description = "Nháº­p: Bearer {token} (khĂ´ng cĂ³ dáº¥u ngoáº·c nhá»n)"
     });
     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
@@ -180,6 +181,10 @@ if (app.Environment.IsDevelopment())
                 path.StartsWithSegments("/demo/qr/pay") ||
                 path.StartsWithSegments("/api/visitor/me") ||
                 path.StartsWithSegments("/api/public/shops") ||
+                path.StartsWithSegments("/api/listening/sessions") ||
+                path == "/api/Language" ||
+                path == "/api/Translation/search" ||
+                path.StartsWithSegments("/api/Audio/translation") ||
                 path.StartsWithSegments("/css") || path.StartsWithSegments("/js") ||
                 path.StartsWithSegments("/lib") || path.StartsWithSegments("/images") ||
                 path.StartsWithSegments("/favicon.ico"))) ||
@@ -196,7 +201,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
-// Seed dữ liệu mẫu
+// Seed dá»¯ liá»‡u máº«u
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -205,11 +210,11 @@ using (var scope = app.Services.CreateScope())
 
     if (!db.Users.Any())
     {
-        var admin = new User { Username = "admin", Role = Role.Admin, FullName = "Quản trị viên", Active = true };
+        var admin = new User { Username = "admin", Role = Role.Admin, FullName = "Quáº£n trá»‹ viĂªn", Active = true };
         admin.PasswordHash = hasher.HashPassword(admin, "admin123");
         db.Users.Add(admin);
 
-        var owner = new User { Username = "owner1", Role = Role.Owner, FullName = "Chủ quán 1", Active = true };
+        var owner = new User { Username = "owner1", Role = Role.Owner, FullName = "Chá»§ quĂ¡n 1", Active = true };
         owner.PasswordHash = hasher.HashPassword(owner, "owner123");
         db.Users.Add(owner);
 
@@ -220,8 +225,8 @@ using (var scope = app.Services.CreateScope())
             new Shop
             {
                 OwnerId = owner.Id,
-                Name = "Quán Ăn Gia Đình Phố",
-                Address = "123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM",
+                Name = "QuĂ¡n Ä‚n Gia ÄĂ¬nh Phá»‘",
+                Address = "123 LĂ½ Tá»± Trá»ng, PhÆ°á»ng Báº¿n ThĂ nh, Quáº­n 1, TP.HCM",
                 Latitude = 10.7743,
                 Longitude = 106.6978,
                 ActivationRadiusMeters = 50,
@@ -230,8 +235,8 @@ using (var scope = app.Services.CreateScope())
             new Shop
             {
                 OwnerId = owner.Id,
-                Name = "Bún Chả Hà Nội 36 Phố",
-                Address = "36 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP.HCM",
+                Name = "BĂºn Cháº£ HĂ  Ná»™i 36 Phá»‘",
+                Address = "36 Nguyá»…n TrĂ£i, PhÆ°á»ng Báº¿n ThĂ nh, Quáº­n 1, TP.HCM",
                 Latitude = 10.7712,
                 Longitude = 106.6935,
                 ActivationRadiusMeters = 60,
@@ -240,8 +245,8 @@ using (var scope = app.Services.CreateScope())
             new Shop
             {
                 OwnerId = owner.Id,
-                Name = "Phở Bò Sài Gòn Xưa",
-                Address = "150 Pasteur, Phường 6, Quận 3, TP.HCM",
+                Name = "Phá»Ÿ BĂ² SĂ i GĂ²n XÆ°a",
+                Address = "150 Pasteur, PhÆ°á»ng 6, Quáº­n 3, TP.HCM",
                 Latitude = 10.7823,
                 Longitude = 106.6930,
                 ActivationRadiusMeters = 50,
@@ -250,8 +255,8 @@ using (var scope = app.Services.CreateScope())
             new Shop
             {
                 OwnerId = owner.Id,
-                Name = "Ốc Đêm Sài Thành",
-                Address = "45 Võ Văn Tần, Phường 6, Quận 3, TP.HCM",
+                Name = "á»c ÄĂªm SĂ i ThĂ nh",
+                Address = "45 VĂµ VÄƒn Táº§n, PhÆ°á»ng 6, Quáº­n 3, TP.HCM",
                 Latitude = 10.7790,
                 Longitude = 106.6915,
                 ActivationRadiusMeters = 80,
@@ -260,8 +265,8 @@ using (var scope = app.Services.CreateScope())
             new Shop
             {
                 OwnerId = owner.Id,
-                Name = "Cơm Tấm Ba Ghiền",
-                Address = "84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM",
+                Name = "CÆ¡m Táº¥m Ba Ghiá»n",
+                Address = "84 Äáº·ng VÄƒn Ngá»¯, PhÆ°á»ng 10, PhĂº Nhuáº­n, TP.HCM",
                 Latitude = 10.7996,
                 Longitude = 106.6790,
                 ActivationRadiusMeters = 100,
@@ -271,7 +276,7 @@ using (var scope = app.Services.CreateScope())
         db.Shops.AddRange(shops);
         db.SaveChanges();
 
-        // 3. Tạo sẵn 1 ShopSubmission đã duyệt cho mỗi quán (để API lấy content trả về dữ liệu)
+        // 3. Táº¡o sáºµn 1 ShopSubmission Ä‘Ă£ duyá»‡t cho má»—i quĂ¡n (Ä‘á»ƒ API láº¥y content tráº£ vá» dá»¯ liá»‡u)
         foreach (var shop in shops)
         {
             var sub = new ShopSubmission
@@ -283,7 +288,7 @@ using (var scope = app.Services.CreateScope())
                 Latitude = shop.Latitude,
                 Longitude = shop.Longitude,
                 ActivationRadiusMeters = shop.ActivationRadiusMeters,
-                Description = "Quán ăn ngon, không gian sạch sẽ.",
+                Description = "QuĂ¡n Äƒn ngon, khĂ´ng gian sáº¡ch sáº½.",
                 Status = SubmissionStatus.Approved,
                 ReviewedById = admin.Id,
                 ReviewedAt = DateTime.UtcNow,
@@ -293,7 +298,7 @@ using (var scope = app.Services.CreateScope())
             db.ShopSubmissions.Add(sub);
             db.SaveChanges();
 
-            // Gắn version đã duyệt vào Shop
+            // Gáº¯n version Ä‘Ă£ duyá»‡t vĂ o Shop
             shop.PublishedVersionId = sub.Id;
             db.SaveChanges();
         }
@@ -302,18 +307,18 @@ using (var scope = app.Services.CreateScope())
     // Module B (Truc/Nhong): seed languages independently of existing users.
     // Idempotent: do not overwrite translations or audio already created in the database.
     if (!db.Languages.Any(x => x.Code == "vi"))
-        db.Languages.Add(new Language { Code = "vi", Name = "Tiếng Việt", IsActive = true });
+        db.Languages.Add(new Language { Code = "vi", Name = "Tiáº¿ng Viá»‡t", IsActive = true });
     if (!db.Languages.Any(x => x.Code == "en"))
-        db.Languages.Add(new Language { Code = "en", Name = "Tiếng Anh", IsActive = true });
+        db.Languages.Add(new Language { Code = "en", Name = "Tiáº¿ng Anh", IsActive = true });
     if (!db.Languages.Any(x => x.Code == "zh"))
-        db.Languages.Add(new Language { Code = "zh", Name = "Tiếng Trung", IsActive = true });
+        db.Languages.Add(new Language { Code = "zh", Name = "Tiáº¿ng Trung", IsActive = true });
     if (!db.Languages.Any(x => x.Code == "km"))
-        db.Languages.Add(new Language { Code = "km", Name = "Tiếng Khmer", IsActive = true });
+        db.Languages.Add(new Language { Code = "km", Name = "Tiáº¿ng Khmer", IsActive = true });
     db.SaveChanges();
 
     // Attach the audio demo only to a real, published shop version (never to an arbitrary Id).
     var demoShop = db.Shops.FirstOrDefault(x =>
-        x.Name == "Quán Ăn Gia Đình Phố" && x.PublishStatus == PublishStatus.Approved);
+        x.Name == "QuĂ¡n Ä‚n Gia ÄĂ¬nh Phá»‘" && x.PublishStatus == PublishStatus.Approved);
     var publishedVersionId = demoShop?.PublishedVersionId;
     var viLanguage = db.Languages.FirstOrDefault(x => x.Code == "vi");
     if (publishedVersionId != null && viLanguage != null)
@@ -326,7 +331,7 @@ using (var scope = app.Services.CreateScope())
             {
                 ShopSubmissionId = publishedVersionId.Value,
                 LanguageId = viLanguage.Id,
-                TranslatedText = "Chào mừng đến với Quán Ăn Gia Đình Phố. Quán chuyên các món ăn Việt truyền thống, không gian ấm cúng.",
+                TranslatedText = "ChĂ o má»«ng Ä‘áº¿n vá»›i QuĂ¡n Ä‚n Gia ÄĂ¬nh Phá»‘. QuĂ¡n chuyĂªn cĂ¡c mĂ³n Äƒn Viá»‡t truyá»n thá»‘ng, khĂ´ng gian áº¥m cĂºng.",
                 Status = "Success"
             };
             db.Translations.Add(translation);
@@ -358,24 +363,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
-// Do not expose paid MP3/audio from wwwroot before balance verification.
-// Production should stream private audio with authorization and metering.
+// Paid media is served only through the authorized listening-session endpoint.
 app.Use(async (context, next) =>
 {
     string path = context.Request.Path.Value ?? string.Empty;
-    if (new[] { ".mp3", ".wav", ".ogg", ".m4a" }
+    if (context.Request.Path.StartsWithSegments("/audio") ||
+        new[] { ".mp3", ".wav", ".ogg", ".m4a" }
         .Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
     {
-        var visitors = context.RequestServices.GetRequiredService<IAnonymousVisitorService>();
-        var db = context.RequestServices.GetRequiredService<AppDbContext>();
-        var visitor = await visitors.FindExistingAsync(context.Request.Cookies["tm_visitor"]);
-        bool allowed = visitor != null && await db.ListeningBalances
-            .AnyAsync(x => x.AnonymousVisitorId == visitor.Id && x.RemainingSeconds > 0);
-        if (!allowed)
-        {
-            context.Response.StatusCode = StatusCodes.Status402PaymentRequired;
-            return;
-        }
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return;
     }
     await next();
 });

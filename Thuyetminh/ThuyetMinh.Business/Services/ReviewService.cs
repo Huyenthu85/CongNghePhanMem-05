@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using ThuyetMinh.Data;
 using ThuyetMinh.Business.Dtos;
 using ThuyetMinh.Data.Models;
 using ThuyetMinh.Data.Repositories;
@@ -16,12 +18,14 @@ public class ReviewService : IReviewService
     private readonly IShopSubmissionRepository _subs;
     private readonly IShopRepository _shops;
     private readonly IUserRepository _users;
+    private readonly AppDbContext _db;
 
-    public ReviewService(IShopSubmissionRepository subs, IShopRepository shops, IUserRepository users)
+    public ReviewService(IShopSubmissionRepository subs, IShopRepository shops, IUserRepository users, AppDbContext db)
     {
         _subs = subs;
         _shops = shops;
         _users = users;
+        _db = db;
     }
 
     public Task<List<ShopSubmission>> ListPendingAsync() =>
@@ -30,16 +34,16 @@ public class ReviewService : IReviewService
     public async Task<ShopSubmission> ReviewAsync(long submissionId, long adminId, ReviewRequest req)
     {
         var admin = await _users.FindByIdAsync(adminId)
-            ?? throw new UnauthorizedAccessException("Không phải admin");
+            ?? throw new UnauthorizedAccessException("KhĂ´ng pháº£i admin");
 
         if (admin.Role != Role.Admin)
-            throw new UnauthorizedAccessException("Không có quyền duyệt bài");
+            throw new UnauthorizedAccessException("KhĂ´ng cĂ³ quyá»n duyá»‡t bĂ i");
 
         var sub = await _subs.FindByIdAsync(submissionId)
-            ?? throw new KeyNotFoundException("Không tìm thấy bài gửi");
+            ?? throw new KeyNotFoundException("KhĂ´ng tĂ¬m tháº¥y bĂ i gá»­i");
 
         if (sub.Status != SubmissionStatus.Pending)
-            throw new BusinessException("Chỉ duyệt được bài đang chờ");
+            throw new BusinessException("Chá»‰ duyá»‡t Ä‘Æ°á»£c bĂ i Ä‘ang chá»");
 
         if (req.Approve)
         {
@@ -54,11 +58,38 @@ public class ReviewService : IReviewService
             shop.ActivationRadiusMeters = sub.ActivationRadiusMeters;
             shop.PublishStatus = PublishStatus.Approved;
             shop.PublishedVersionId = sub.Id;
+
+            if (!string.IsNullOrWhiteSpace(sub.Description))
+            {
+                var codes = new[] { "vi", "en", "zh", "km" };
+
+                var languageIds = await _db.Languages
+                    .Where(l => l.IsActive && codes.Contains(l.Code))
+                    .Select(l => l.Id)
+                    .ToListAsync();
+
+                var queuedIds = await _db.ProcessingJobs
+                    .Where(j => j.ShopSubmissionId == sub.Id &&
+                        (j.Status == "Pending" ||
+                         j.Status == "Processing"))
+                    .Select(j => j.LanguageId)
+                    .ToListAsync();
+
+                foreach (var languageId in languageIds.Except(queuedIds))
+                {
+                    _db.ProcessingJobs.Add(new ProcessingJob
+                    {
+                        ShopSubmissionId = sub.Id,
+                        LanguageId = languageId,
+                        Status = "Pending"
+                    });
+                }
+            }
         }
         else
         {
             if (string.IsNullOrWhiteSpace(req.RejectionReason))
-                throw new BusinessException("Phải nhập lý do từ chối");
+                throw new BusinessException("Pháº£i nháº­p lĂ½ do tá»« chá»‘i");
 
             sub.Status = SubmissionStatus.Rejected;
             sub.RejectionReason = req.RejectionReason;
@@ -80,7 +111,7 @@ public class ReviewService : IReviewService
     public async Task UpdatePublishStatusAsync(long shopId, PublishStatus status)
     {
         var shop = await _shops.FindByIdAsync(shopId)
-            ?? throw new KeyNotFoundException("Shop không tồn tại");
+            ?? throw new KeyNotFoundException("Shop khĂ´ng tá»“n táº¡i");
         shop.PublishStatus = status;
         await _shops.SaveChangesAsync();
     }

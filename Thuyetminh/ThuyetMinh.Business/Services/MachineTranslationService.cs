@@ -41,7 +41,7 @@ public class MachineTranslationService : IMachineTranslationService
 
         var info = new ProcessStartInfo
         {
-            FileName = "py",
+            FileName = Environment.GetEnvironmentVariable("NARRATION_PYTHON") ?? "python",
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -61,7 +61,7 @@ public class MachineTranslationService : IMachineTranslationService
 
         using var timeout = CancellationTokenSource
             .CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(45));
+        timeout.CancelAfter(TimeSpan.FromSeconds(120));
 
         if (!process.Start())
             throw new InvalidOperationException(

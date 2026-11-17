@@ -92,19 +92,62 @@ public sealed class DemoQrController : ControllerBase
             <!doctype html><html lang="vi"><head><meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta name="referrer" content="no-referrer">
-            <title>Thanh toán mô phỏng</title>
+            <title>Thanh toán</title>
             <style>body{font:16px system-ui,sans-serif;max-width:460px;padding:40px 20px;margin:40px auto;color:#243b50;text-align:center}
             .card{border:1px solid #dce6e5;border-radius:18px;padding:28px;box-shadow:0 12px 30px #0000000b}
             h1{font-size:23px}p{line-height:1.7}button{padding:12px 20px;border:0;border-radius:8px;background:#264156;color:white;cursor:pointer}</style>
-            </head><body><div class="card"><h1>Thanh toán mô phỏng</h1>
-            <p>Gói 20.000 VNĐ – 900 giây. Không chuyển tiền thật.</p>
-            <p id="result" role="status">Đã quét QR. Đang xác nhận giao dịch DEMO...</p>
+            </head><body><div class="card"><h1>Thanh toán</h1>
+            <p>Gói 20.000 VNĐ – 900 giây.</p>
+            <p id="result" role="status">Đã quét QR. Đang xác nhận giao dịch...</p>
             <button id="retry" style="display:none" type="button">Thử lại</button>
             </div><script>
             const code = {{safeCode}};
+            const candidate = new URLSearchParams(location.search).get('lang');
+            const lang = ['vi','en','zh','km'].includes(candidate) ? candidate : 'vi';
+
+            const labels = {
+              vi: [
+                'Thanh toán',
+                'Gói 20.000 VNĐ – 900 giây.',
+                'Đang xác nhận giao dịch...',
+                'Đã xác nhận thanh toán thành công. 900 giây được cộng cho thiết bị hiển thị QR. Bạn có thể đóng trang này.',
+                'Thử lại',
+                'Không thể xác nhận thanh toán.'
+              ],
+              en: [
+                'Simulated payment',
+                '20,000 VND – 900 seconds. No real money is transferred.',
+                'Confirming DEMO payment...',
+                'DEMO payment confirmed. 900 seconds have been credited to the device displaying the QR code. You may close this page.',
+                'Try again',
+                'Unable to confirm. The QR code may be invalid, expired or already used.'
+              ],
+              zh: [
+                '模拟支付',
+                '20,000 越南盾 – 900 秒。不进行真实转账。',
+                '正在确认演示支付…',
+                '演示支付已确认。显示二维码的设备已获得 900 秒收听时间。您可以关闭此页面。',
+                '重试',
+                '无法确认。二维码可能无效、已过期或已使用。'
+              ],
+              km: [
+                'ការទូទាត់សាកល្បង',
+                '20,000 ដុងវៀតណាម – 900 វិនាទី។ មិនមានការផ្ទេរប្រាក់ពិតទេ។',
+                'កំពុងបញ្ជាក់ការទូទាត់សាកល្បង...',
+                'បានបញ្ជាក់ការទូទាត់សាកល្បងដោយជោគជ័យ។ 900 វិនាទីត្រូវបានបន្ថែមទៅឧបករណ៍ដែលបង្ហាញកូដ QR។ អ្នកអាចបិទទំព័រនេះបាន។',
+                'ព្យាយាមម្តងទៀត',
+                'មិនអាចបញ្ជាក់បានទេ។ កូដ QR អាចមិនត្រឹមត្រូវ ផុតកំណត់ ឬត្រូវបានប្រើរួចហើយ។'
+              ]
+            }[lang];
+
+            document.documentElement.lang = lang;
+            document.title = labels[0];
+            document.querySelector('h1').textContent = labels[0];
+            document.querySelector('.card > p').textContent = labels[1];
+            document.getElementById('retry').textContent = labels[4];
             async function confirmDemo() {
               const el = document.getElementById('result');
-              el.textContent = 'Đang xác nhận giao dịch DEMO...';
+              el.textContent = labels[2];
               document.getElementById('retry').style.display = 'none';
               try {
                 const response = await fetch('/api/demo/qr/redeem', {method:'POST',
@@ -112,9 +155,9 @@ public sealed class DemoQrController : ControllerBase
                   credentials:'same-origin', body:JSON.stringify({code})});
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(data.message || 'HTTP ' + response.status);
-                el.textContent = 'Đã xác nhận thanh toán DEMO thành công. 900 giây được cộng cho thiết bị hiển thị QR. Bạn có thể đóng trang này.';
+                el.textContent = labels[3];
               } catch (error) {
-                el.textContent = 'Không thể xác nhận: ' + error.message;
+                el.textContent = lang === 'vi' ? 'Không thể xác nhận: ' + error.message : labels[5];
                 document.getElementById('retry').style.display = 'inline-block';
               }
             }

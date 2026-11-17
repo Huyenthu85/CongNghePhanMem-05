@@ -10,7 +10,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Thuyết minh đa ngôn ngữ</title>
-    <link rel="stylesheet" href="/css/narration.css" />
+    <link rel="stylesheet" href="~/css/narration.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/visitor-language.css" asp-append-version="true" />
 </head>
 <body data-shop-id="0" data-require-gps="@(Model.RequireGps ? "true" : "false")">
 @Html.AntiForgeryToken()
@@ -19,6 +20,10 @@
         <div class="header-inner">
             <a class="tour-logo" href="/Narration"><span class="logo-icon">♫</span><span>Thuyết Minh Tự Động Đa Ngôn Ngữ<small>KHÁM PHÁ QUA ÂM THANH</small></span></a>
             <nav class="tour-nav" aria-label="Điều hướng chính"><a href="/Narration" class="nav-current">Khám phá</a><a href="/Narration#destinations">Địa điểm</a></nav>
+            <div class="header-balance">
+                <small id="header-balance-label">THỜI GIAN CÒN LẠI</small>
+                <strong id="header-remaining-time">@(Model.RemainingSeconds / 60):@((Model.RemainingSeconds % 60).ToString("D2"))</strong>
+            </div>
 
         </div>
     </header>
@@ -98,7 +103,8 @@
                 <span>Trình phát thuyết minh</span>
             </div>
             <div class="audio-controls">
-                <audio id="narration-audio" controls preload="metadata">
+                <button type="button" id="narration-start-audio" class="location-button" hidden>Phát thuyết minh</button>
+                <audio id="narration-audio" controls preload="none">
                     Trình duyệt không hỗ trợ audio.
                 </audio>
                 <span id="audio-status" class="audio-status">Chưa có audio</span>
@@ -112,12 +118,14 @@
         </div>
     </footer>
 </div>
+<script src="~/js/visitor-language.js" asp-append-version="true"></script>
+<script src="~/js/narration-language.js" asp-append-version="true"></script>
 <script src="~/js/narration-listening.js" asp-append-version="true" defer></script>
 <script>
 (() => {
     // Danh mục giới thiệu tham khảo; ID thực tế chỉ xác định theo bản ghi đã duyệt trong SQL Server.
     const shops = [
-    { slug:'truong-dh-sai-gon-cs1', shopId:6, name:'Trường Đại Học Sài Gòn - Cơ sở 1', address:'105 Bà Huyện Thanh Quan, Phường 7, Quận 3, TP.HCM', lat:10.7795, lon:106.6845, desc:'Trường Đại học Sài Gòn - một trong những cơ sở giáo dục lâu đời và uy tín nhất khu vực phía Nam.', image:'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1100&q=80' },
+    { slug:'truong-dh-sai-gon-cs1', shopId:null, name:'Trường Đại Học Sài Gòn - Cơ sở 1', address:'105 Bà Huyện Thanh Quan, Phường 7, Quận 3, TP.HCM', lat:10.7795, lon:106.6845, desc:'Trường Đại học Sài Gòn - một trong những cơ sở giáo dục lâu đời và uy tín nhất khu vực phía Nam.', image:'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1100&q=80' },
         { slug:'gia-dinh-pho', shopId:null, name:'Quán Ăn Gia Đình Phố', address:'123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM', lat:10.7743, lon:106.6978, desc:'Quán ăn gia đình với các món Việt truyền thống, không gian ấm cúng.', image:'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1100&q=80' },
         { slug:'bun-cha-36-pho', shopId:null, name:'Bún Chả Hà Nội 36 Phố', address:'36 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP.HCM', lat:10.7712, lon:106.6935, desc:'Hương vị bún chả chuẩn Hà Nội giữa lòng Sài Gòn, nướng than hoa.', image:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1100&q=80' },
         { slug:'pho-sai-gon-xua', shopId:null, name:'Phở Bò Sài Gòn Xưa', address:'150 Pasteur, Phường 6, Quận 3, TP.HCM', lat:10.7823, lon:106.6930, desc:'Phở bò nấu theo công thức gia truyền hơn 30 năm, nước dùng thanh ngọt.', image:'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1100&q=80' },
@@ -134,6 +142,8 @@
             existing.shopId = item.id;
             existing.lat = item.latitude;
             existing.lon = item.longitude;
+            existing.publishedDescriptions = item.descriptions || {};
+            existing.desc = item.descriptions?.vi || 'Địa điểm đã được duyệt trong hệ thống.';
             continue;
         }
 
@@ -144,7 +154,8 @@
             address: item.address,
             lat: item.latitude,
             lon: item.longitude,
-            desc: 'Địa điểm đã được duyệt trong hệ thống.',
+            desc: item.descriptions?.vi || 'Địa điểm đã được duyệt trong hệ thống.',
+            publishedDescriptions: item.descriptions || {},
             image: shops[0].image
         });
     }
@@ -155,6 +166,14 @@
     }
 
     const $ = id => document.getElementById(id);
+    const say = (id, key, fallback, ...args) => {
+        if (window.TMNarration) window.TMNarration.say($(id), key, ...args);
+        else $(id).textContent = fallback;
+    };
+    const raw = (id, text) => {
+        if (window.TMNarration) window.TMNarration.raw($(id), text);
+        else $(id).textContent = text;
+    };
     const escapeHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const params = new URLSearchParams(location.search);
     const selected = shops.find(x => x.slug === params.get('place'));
@@ -162,11 +181,24 @@
         const url = new URL(a.getAttribute('href'), location.origin);
         if (params.get('preview') === '1') url.searchParams.set('preview', '1');
         a.setAttribute('href', url.pathname + url.search + url.hash);
+
+        if (selected && !url.searchParams.has('place')) {
+            a.addEventListener('click', () => {
+                try {
+                    sessionStorage.setItem(
+                        'tm_auto_gps_back_until_v2',
+                        String(Date.now() + 15000)
+                    );
+                } catch {}
+            });
+        }
     });
     const audio = $('narration-audio');
     let versionId = null, languages = [], requestSeq = 0;
-    const setStatus = message => { $('api-status').textContent = message; };
+    const setStatus = (key, message) => say('api-status', key, message);
     const stopAudio = () => {
+        delete audio.dataset.audioId;
+        document.dispatchEvent(new Event('tm:audio-changing'));
         audio.pause();
         audio.removeAttribute('src');
         audio.load();
@@ -190,12 +222,14 @@
                 return 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
             };
 
-            const watcher = navigator.geolocation.watchPosition(pos => {
-                if (navigating) return;
+            let latestFix = null, watcher = null;
+            const checkPosition = pos => {
+                if (navigating || (window.TMUI && !window.TMUI.hasChosen())) return;
+                if (Date.now() - pos.timestamp > 30000 || pos.timestamp > Date.now() + 10000) return;
 
                 const {latitude, longitude, accuracy} = pos.coords;
 
-                if (![latitude, longitude, accuracy].every(Number.isFinite))
+                if (![latitude, longitude, accuracy].every(Number.isFinite) || accuracy <= 0)
                     return;
 
                 let closest = null;
@@ -224,10 +258,11 @@
 
                 // GPS-AUTO-REENTRY-GUARD
                 // Trigger automatically once per zone entry, not on every page visit.
-                const latchKey = "tm_auto_gps_last_shop";
+                const latchKey = "tm_auto_gps_played_shop_v2";
                 let lastShopId;
 
                 try {
+                    if (Number(sessionStorage.getItem('tm_auto_gps_back_until_v2')) > Date.now()) return;
                     lastShopId = sessionStorage.getItem(latchKey);
                 } catch {
                     // If storage is unavailable, keep manual navigation.
@@ -264,24 +299,48 @@
                 }
 
                 if (closest) {
-                    try {
-                        sessionStorage.setItem(
-                            latchKey,
-                            String(closest.shop.shopId)
-                        );
-                    } catch {
-                        return;
-                    }
-
                     navigating = true;
-                    navigator.geolocation.clearWatch(watcher);
+                    if (watcher !== null) navigator.geolocation.clearWatch(watcher);
 
                     window.location.replace(
                         '/Narration?place=' +
                         encodeURIComponent(closest.shop.slug)
                     );
                 }
-            }, () => {}, {
+            };
+
+            const acceptPosition = pos => {
+                if (navigating || !Number.isFinite(pos.timestamp)) return;
+
+                if (latestFix && (pos.timestamp < latestFix.timestamp ||
+                    (pos.timestamp === latestFix.timestamp &&
+                     pos.coords.accuracy >= latestFix.coords.accuracy))) return;
+
+                latestFix = pos;
+                checkPosition(pos);
+            };
+
+            document.addEventListener('tm:ui-language-changed', () => {
+                if (latestFix && Date.now() - latestFix.timestamp <= 5000)
+                    checkPosition(latestFix);
+                else if (!navigating)
+                    navigator.geolocation.getCurrentPosition(
+                        acceptPosition, () => {}, {
+                            enableHighAccuracy: false,
+                            maximumAge: 5000,
+                            timeout: 4000
+                        }
+                    );
+            });
+
+            navigator.geolocation.getCurrentPosition(
+                acceptPosition, () => {}, {
+                    enableHighAccuracy: false,
+                    maximumAge: 5000,
+                    timeout: 4000
+                });
+
+            watcher = navigator.geolocation.watchPosition(acceptPosition, () => {}, {
                 enableHighAccuracy: true,
                 maximumAge: 0,
                 timeout: 20000
@@ -297,15 +356,29 @@
         $('shop-grid').innerHTML = shops.map(s => `
             <a class="shop-card" href="/Narration?place=${encodeURIComponent(s.slug)}${params.get('preview') === '1' ? '&preview=1' : ''}">
                 <div class="shop-card-image"><img src="${s.image}" alt="Ảnh minh họa ${escapeHtml(s.name)}" loading="lazy"></div>
-                <div class="shop-card-body"><span class="section-label">QUÁN ĂN • TP.HCM</span><h2>${escapeHtml(s.name)}</h2><p class="shop-address">${escapeHtml(s.address)}</p><p>${escapeHtml(s.desc)}</p><span class="card-arrow">Xem chi tiết →</span></div>
+                <div class="shop-card-body"><span class="section-label">QUÁN ĂN • TP.HCM</span><h2>${escapeHtml(s.name)}</h2><p class="shop-address" data-original-address="${escapeHtml(s.address)}">${escapeHtml(s.address)}</p><p data-original-description="${escapeHtml(s.desc)}">${escapeHtml(s.desc)}</p><span class="card-arrow">Xem chi tiết →</span></div>
             </a>`).join('');
+        window.TMNarration?.localizeCards();
+
+        $('shop-grid').querySelectorAll('.shop-card').forEach((card,i) => {
+            const shop = shops[i];
+
+            window.TMNarration?.setDescription(
+                card.querySelector('[data-original-description]'),
+                shop.desc,
+                shop.publishedDescriptions
+            );
+        });
         const search = $('shop-search');
+        document.addEventListener('tm:ui-language-changed', () => search.dispatchEvent(new Event('input')));
         search.addEventListener('input', () => {
             const query = search.value.trim().toLocaleLowerCase('vi');
             let visible = 0;
             $('shop-grid').querySelectorAll('.shop-card').forEach((card, index) => {
                 const shop = shops[index];
-                const match = (shop.name + ' ' + shop.address + ' ' + shop.desc).toLocaleLowerCase('vi').includes(query);
+                const addressText = card.querySelector('.shop-address')?.textContent || '';
+                const descriptionText = card.querySelector('[data-original-description]')?.textContent || '';
+                const match = (shop.name + ' ' + shop.address + ' ' + addressText + ' ' + shop.desc + ' ' + descriptionText).toLocaleLowerCase('vi').includes(query);
                 card.hidden = !match;
                 if (match) visible++;
             });
@@ -320,13 +393,17 @@
     $('audio-dock').hidden = false;
     $('shop-name').textContent = selected.name;
     $('dock-shop-name').textContent = selected.name;
-    $('shop-address').textContent = selected.address;
-    $('hero-description').textContent = selected.desc;
+    if (window.TMNarration) window.TMNarration.setAddress($('shop-address'), selected.address);
+    else $('shop-address').textContent = selected.address;
+    if (window.TMNarration?.setDescription) window.TMNarration.setDescription($('hero-description'), selected.desc, selected.publishedDescriptions);
+    else $('hero-description').textContent = selected.desc;
     $('detail-view').style.setProperty('--shop-hero-image', `url("${selected.image}")`);
-    $('shop-description').textContent = selected.desc;
+    if (window.TMNarration?.setDescription) window.TMNarration.setDescription($('shop-description'), selected.desc, selected.publishedDescriptions);
+    else $('shop-description').textContent = selected.desc;
     $('detail-photo').src = selected.image;
     $('detail-photo').alt = 'Ảnh minh họa ' + selected.name;
-    $('map-note').textContent = selected.address;
+    if (window.TMNarration) window.TMNarration.setAddress($('map-note'), selected.address);
+    else $('map-note').textContent = selected.address;
 
     // Bộ ảnh minh họa; nếu chưa có ảnh bổ sung của quán thì chỉ hiển thị ảnh hiện có.
     const galleryImages = [selected.image];
@@ -351,75 +428,110 @@
 
     // GPS chỉ hiển thị khoảng cách tham khảo, KHÔNG cấp quyền nghe.
     $('enable-location').addEventListener('click', () => {
-        const label = $('gps-result');
-        if (!navigator.geolocation) { label.textContent = 'Trình duyệt không hỗ trợ định vị'; return; }
-        label.textContent = 'Đang xác định vị trí...';
+        if (!navigator.geolocation) { say('gps-result','gpsUnsupported','Trình duyệt không hỗ trợ định vị'); return; }
+        say('gps-result','gpsLooking','Đang xác định vị trí...');
         navigator.geolocation.getCurrentPosition(pos => {
             const rad = n => n * Math.PI / 180;
             const lat1 = pos.coords.latitude, lon1 = pos.coords.longitude;
             const dLat = rad(selected.lat - lat1), dLon = rad(selected.lon - lon1);
             const a = Math.sin(dLat / 2)**2 + Math.cos(rad(lat1)) * Math.cos(rad(selected.lat)) * Math.sin(dLon / 2)**2;
             const meters = 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
-            label.textContent = meters < 1000 ? `Cách khoảng ${Math.round(meters)} m` : `Cách khoảng ${(meters / 1000).toFixed(1)} km`;
-        }, err => {label.textContent = err.code === 1 ? 'Bạn chưa cấp quyền định vị' : 'Không lấy được vị trí';},
+            const value = meters < 1000 ? Math.round(meters) : (meters / 1000).toFixed(1);
+            const unit = meters < 1000 ? 'm' : 'km';
+            say('gps-result','distance',`Cách khoảng ${value} ${unit}`,value,unit);
+        }, err => {say('gps-result',err.code === 1 ? 'gpsDenied' : 'gpsFailed',err.code === 1 ? 'Bạn chưa cấp quyền định vị' : 'Không lấy được vị trí');},
         {enableHighAccuracy: true, timeout: 12000, maximumAge: 30000});
     });
 
 
 
     // Use real IDs from approved database rows, never assume that IDs start at 1.
-    const approvedShop = approvedShops.find(x => x.name === selected.name && x.address === selected.address);
+    const approvedShop = approvedShops.find(x => Number(x.id) === Number(selected.shopId));
     document.body.dataset.shopId = approvedShop ? String(approvedShop.id) : '0';
+
+    if (approvedShop) {
+        document.body.dataset.shopLatitude = String(approvedShop.latitude);
+        document.body.dataset.shopLongitude = String(approvedShop.longitude);
+        document.body.dataset.shopRadius = String(approvedShop.activationRadiusMeters);
+    }
     const delta = 0.006;
     const map = new URLSearchParams({bbox:[selected.lon-delta,selected.lat-delta,selected.lon+delta,selected.lat+delta].join(','),layer:'mapnik',marker:`${selected.lat},${selected.lon}`});
     $('shop-map').src = 'https://www.openstreetmap.org/export/embed.html?' + map.toString();
 
 
-    audio.addEventListener('error', () => { $('audio-status').textContent = 'Không tải được file âm thanh'; });
-    audio.addEventListener('ended', () => { $('audio-status').textContent = 'Đã phát xong'; });
+    audio.addEventListener('error', () => say('audio-status','audioError','Không tải được file âm thanh'));
+    audio.addEventListener('ended', () => say('audio-status','finished','Đã phát xong'));
 
 
     async function loadNarration() {
         const requestId = ++requestSeq;
         stopAudio();
-        $('narration-text-status').textContent = 'Đang kiểm tra bản dịch...';
-        $('translation-label').textContent = $('language').selectedOptions[0]?.textContent || 'Ngôn ngữ đã chọn';
+        say('narration-text-status','checkingTranslation','Đang kiểm tra bản dịch...');
+        raw('translation-label', $('language').selectedOptions[0]?.textContent || '');
         const language = languages.find(l => l.code === $('language').value);
         if (!versionId || !language) return;
-        $('audio-status').textContent = 'Đang tải audio...';
+        say('audio-status','loadingAudio','Đang tải audio...');
         try {
             const r = await fetch(`/api/Translation/search?shopSubmissionId=${versionId}&languageId=${language.id}`);
-            if (!r.ok) throw new Error(r.status === 404 ? 'Quán chưa có bản dịch cho ngôn ngữ này.' : 'Không tải được bản dịch.');
+            if (!r.ok) throw Object.assign(new Error(r.status === 404 ? 'Quán chưa có bản dịch cho ngôn ngữ này.' : 'Không tải được bản dịch.'), {uiKey: r.status === 404 ? 'noTranslation' : 'translationError'});
             const translation = await r.json();
             if (requestId !== requestSeq) return;
-            $('narration-text-status').textContent = translation.translatedText || 'Có bản dịch nhưng chưa có nội dung văn bản để hiển thị.';
+            setStatus('approved','Nội dung đã được duyệt.');
+            if (translation.translatedText) raw('narration-text-status', translation.translatedText);
+            else say('narration-text-status','emptyTranslation','Có bản dịch nhưng chưa có nội dung văn bản để hiển thị.');
             const a = await fetch(`/api/Audio/translation/${translation.id}`);
-            if (a.status === 404) { $('audio-status').textContent = 'Chưa có audio'; return; }
+            if (requestId !== requestSeq) return;
+            if (a.status === 404) { say('audio-status','noAudio','Chưa có audio'); return; }
             if (!a.ok) throw new Error('Không tải được thông tin audio.');
             const item = await a.json();
             if (requestId !== requestSeq) return;
-            if (!item.filePath) throw new Error('Chưa có đường dẫn file audio.');
-            const path = String(item.filePath).replace(/\\/g,'/');
-            if (/^https?:\/\//i.test(path)) {
-                const url = new URL(path);
-                if (url.origin !== location.origin) throw new Error('Đường dẫn audio không thuộc website.');
-                audio.src = url.href;
-            } else {
-                audio.src = '/' + path.replace(/^\/+/, '');
-            }
-            audio.load();
-            $('audio-status').textContent = 'Sẵn sàng phát';
+            if (!item.id || item.status !== 'Success') throw new Error('Audio chưa sẵn sàng.');
+            audio.dataset.audioId = String(item.id);
+            say('audio-status','ready','Sẵn sàng phát');
 
             document.dispatchEvent(new CustomEvent('tm:audio-ready', {
-                detail: {shopId: approvedShop.id}
+                detail: {shopId: approvedShop.id, audioId: item.id}
             }));
         } catch(e) {
-            if (requestId === requestSeq) { setStatus(e.message); $('audio-status').textContent = 'Chưa có audio'; $('narration-text-status').textContent = e.message; }
+            if (requestId === requestSeq) { setStatus(e.uiKey || 'translationError',e.message); say('audio-status','noAudio','Chưa có audio'); say('narration-text-status',e.uiKey || 'translationError',e.message); }
         }
     }
     $('language').addEventListener('change', loadNarration);
+
+    // TM-AUDIO-LANGUAGE-SYNC
+    document.addEventListener('tm:ui-language-changed', () => {
+        const preferred = window.TMUI?.language() || 'vi';
+        const select = $('language');
+
+        if (!languages.length) return;
+
+        const target = languages.find(l => l.code === preferred);
+
+        if (!target) {
+            select.selectedIndex = -1;
+
+            if (versionId) {
+                ++requestSeq;
+                stopAudio();
+                setStatus('languageMissing', 'Ngôn ngữ này chưa khả dụng.');
+                say('audio-status', 'noAudio', 'Chưa có audio');
+                say('narration-text-status', 'noTranslation', 'Chưa có bản dịch');
+            }
+
+            return;
+        }
+
+        if (select.value === target.code) return;
+
+        select.value = target.code;
+
+        if (versionId) {
+            void loadNarration();
+        }
+    });
     (async () => {
         try {
+            if (window.TMUI) await window.TMUI.whenChosen();
             const r = await fetch('/api/Language');
             if (!r.ok) throw new Error('Không tải được danh sách ngôn ngữ.');
             const all = await r.json();
@@ -428,14 +540,16 @@
             languages = languages.filter(l =>
                 l.isActive && ['vi', 'en', 'zh', 'km'].includes(l.code?.toLowerCase())
             );
-            $('language').innerHTML = languages.map(l => `<option value="${escapeHtml(l.code)}">${escapeHtml(l.name)}</option>`).join('');
+            $('language').innerHTML = languages.map(l => `<option value="${escapeHtml(l.code)}">${escapeHtml(window.TMNarration?.languageName(l.code) || l.name)}</option>`).join('');
             $('language').disabled = languages.length === 0;
-            if (languages.some(l => l.code === 'vi')) $('language').value = 'vi';
+            const preferred = window.TMUI?.language() || 'vi';
+            if (languages.some(l => l.code === preferred)) $('language').value = preferred;
+            else $('language').selectedIndex = -1;
 
 
             if (!approvedShop) {
-                setStatus('Đây là địa điểm tham khảo, chưa có bản ghi đã duyệt khớp tên và địa chỉ trong cơ sở dữ liệu.');
-                $('audio-status').textContent = 'Chưa có audio của quán';
+                setStatus('noApproved','Đây là địa điểm tham khảo, chưa có bản ghi đã duyệt khớp tên và địa chỉ trong cơ sở dữ liệu.');
+                say('audio-status','noAudio','Chưa có audio của quán');
                 return;
             }
             const shopResponse = await fetch(`/api/public/shops/${approvedShop.id}/content`);
@@ -444,11 +558,15 @@
             if (published.name !== selected.name || !published.versionId)
                 throw new Error('Nội dung xuất bản chưa khớp với quán đã chọn.');
             versionId = published.versionId;
-            setStatus('Nội dung đã được duyệt.');
+            setStatus('approved','Nội dung đã được duyệt.');
+            if (!$('language').value) {
+                setStatus('languageMissing','Ngôn ngữ này chưa khả dụng. Vui lòng chọn ngôn ngữ khác.');
+                return;
+            }
             await loadNarration();
         } catch(e) {
-            setStatus(e.message);
-            $('audio-status').textContent = 'Chưa có audio';
+            setStatus('translationError',e.message);
+            say('audio-status','noAudio','Chưa có audio');
         }
     })();
 })();

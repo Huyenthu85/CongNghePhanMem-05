@@ -324,6 +324,9 @@ namespace ThuyetMinh.Data.MigrationsSqlServer
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
 
@@ -335,6 +338,9 @@ namespace ThuyetMinh.Data.MigrationsSqlServer
 
                     b.Property<int>("LanguageId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastAttemptAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<long>("ShopSubmissionId")
                         .HasColumnType("bigint");

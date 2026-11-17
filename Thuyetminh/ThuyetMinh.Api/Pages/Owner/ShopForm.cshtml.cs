@@ -37,13 +37,20 @@ public class ShopFormModel : PageModel
         {
             var shop = await _shops.GetMyShopAsync(id.Value, userId);
             ShopId = shop.Id;
+            var published = shop.PublishedVersionId.HasValue
+                ? (await _shops.ListMySubmissionsAsync(shop.Id, userId))
+                    .FirstOrDefault(x => x.Id == shop.PublishedVersionId)
+                : null;
+
             Input = new ShopFormInput
             {
                 Name = shop.Name,
                 Address = shop.Address,
                 Latitude = shop.Latitude,
                 Longitude = shop.Longitude,
-                ActivationRadiusMeters = shop.ActivationRadiusMeters
+                ActivationRadiusMeters = shop.ActivationRadiusMeters,
+                Description = published?.Description,
+                ImageUrlsText = published?.ImageUrlsRaw
             };
             return Page();
         }
@@ -56,6 +63,12 @@ public class ShopFormModel : PageModel
     public async Task<IActionResult> OnPostAsync(string action)
     {
         var userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        if (action == "submit" && string.IsNullOrWhiteSpace(Input.Description))
+        {
+            Message = "Vui lòng nhập nội dung thuyết minh trước khi gửi duyệt.";
+            return Page();
+        }
 
         var req = new ShopSubmissionRequest
         {

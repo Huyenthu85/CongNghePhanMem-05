@@ -49,7 +49,7 @@ public class TtsService : ITtsService
 
         var info = new ProcessStartInfo
         {
-            FileName = "py",
+            FileName = Environment.GetEnvironmentVariable("NARRATION_PYTHON") ?? "python",
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,

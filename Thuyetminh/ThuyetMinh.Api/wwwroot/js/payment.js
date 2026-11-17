@@ -15,6 +15,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let polling = false;
     let completed = false;
 
+    function say(el, key, fallback, ...args) {
+        if (!el) return;
+        if (window.TMUI) window.TMUI.bind(el, key, ...args);
+        else el.textContent = fallback;
+    }
+
     function savedOrder() {
         try { return localStorage.getItem(ACTIVE_ORDER_KEY); }
         catch { return null; }
@@ -41,9 +47,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         return data;
     }
-    function updateStatus(text) {
-        if (paymentStatus) paymentStatus.textContent = text;
-        if (orderStatus) orderStatus.textContent = text;
+    function updateStatus(key, fallback) {
+        say(paymentStatus, key, fallback);
+        say(orderStatus, key, fallback);
     }
     function stopPolling() {
         if (orderPollingTimer !== null) clearInterval(orderPollingTimer);
@@ -67,8 +73,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 completed = true;
                 stopPolling();
                 forgetOrder();
-                updateStatus("Đã xác nhận QR (DEMO)");
-                feedback.textContent = "Thanh toán đã xác nhận. Thiết bị này được cộng 900 giây và đang mở trang thuyết minh...";
+                updateStatus("paid", "Đã xác nhận QR (DEMO)");
+                say(feedback, "paidFeedback", "Thanh toán đã xác nhận. Thiết bị này được cộng 900 giây và đang mở trang thuyết minh...");
                 window.location.assign("/Narration");
                 return;
             }
@@ -76,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 stopPolling();
                 forgetOrder();
                 currentOrderCode = null;
-                updateStatus(order.status === "Failed" ? "Thanh toán thất bại" : "Đơn hết hạn");
+                updateStatus(order.status === "Failed" ? "failed" : "expired", order.status === "Failed" ? "Thanh toán thất bại" : "Đơn hết hạn");
                 return;
             }
             // Do not decide expiration using the browser clock: SQLite dates can
@@ -87,9 +93,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 stopPolling();
                 forgetOrder();
                 currentOrderCode = null;
-                feedback.textContent = "Không thể đọc đơn thanh toán của trình duyệt này. Hãy tạo đơn/QR mới trong cùng cửa sổ laptop.";
+                say(feedback, "orderRead", "Không thể đọc đơn thanh toán của trình duyệt này. Hãy tạo đơn/QR mới trong cùng cửa sổ laptop.");
             } else {
-                feedback.textContent = "Không thể đồng bộ trạng thái đơn: " + error.message;
+                say(feedback, "syncError", "Không thể đồng bộ trạng thái đơn: " + error.message);
                 // Giữ bộ theo dõi để thử lại khi mạng phục hồi.
             }
         } finally {
@@ -100,13 +106,13 @@ document.addEventListener("DOMContentLoaded", () => {
         currentOrderCode = order.orderCode;
         completed = false;
         rememberOrder(currentOrderCode);
-        updateStatus("Đang chờ quét QR thanh toán");
+        updateStatus("waiting", "Đang chờ quét QR thanh toán");
         if (orderCodeText) {
             orderCodeText.hidden = false;
-            orderCodeText.textContent = `Mã đơn hàng: ${currentOrderCode}`;
+            say(orderCodeText, "orderCode", `Mã đơn hàng: ${currentOrderCode}`, currentOrderCode);
         }
         if (restored) {
-            feedback.textContent = "Đã khôi phục mã đơn đang theo dõi. Hệ thống đang kiểm tra thanh toán...";
+            say(feedback, "restored", "Đã khôi phục mã đơn đang theo dõi. Hệ thống đang kiểm tra thanh toán...");
         }
         startPolling();
     }
@@ -128,14 +134,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const visitor = await callApi("/api/visitor/me");
             if (visitor.remainingSeconds > 0 && enterButton) {
                 enterButton.hidden = false;
-                feedback.textContent = `Bạn còn ${visitor.remainingSeconds} giây nghe; có thể vào ứng dụng.`;
+                say(feedback, "remaining", `Bạn còn ${visitor.remainingSeconds} giây nghe; có thể vào ứng dụng.`, visitor.remainingSeconds);
             } else {
-                feedback.textContent = "Bạn chưa có thời lượng nghe. Hãy tạo QR thanh toán mô phỏng.";
+                say(feedback, "empty", "Bạn chưa có thời lượng nghe. Hãy tạo QR thanh toán mô phỏng.");
             }
             const previousOrder = savedOrder();
             if (previousOrder) displayOrder({ orderCode: previousOrder }, true);
         } catch (error) {
-            feedback.textContent = "Không thể kết nối API: " + error.message;
+            say(feedback, "apiError", "Không thể kết nối API: " + error.message);
         } finally {
             if (createButton) createButton.disabled = false;
         }
@@ -146,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
             await createOrder();
             if (issueQrButton) issueQrButton.click();
         } catch (error) {
-            feedback.textContent = "Không thể tạo đơn: " + error.message;
+            say(feedback, "createError", "Không thể tạo đơn: " + error.message);
         } finally { createButton.disabled = false; }
     });
     issueQrButton?.addEventListener("click", async () => {
@@ -155,11 +161,11 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             // QR target uses the configured demo ngrok domain.
             const publicHost = document.querySelector(".payment-container")?.dataset.demoPublicHost?.trim();
-if (!publicHost) throw new Error("Chua cau hinh Demo:PublicHost cho may nay.");
+if (!publicHost) throw Object.assign(new Error("Chua cau hinh Demo:PublicHost cho may nay."), {uiKey: "publicHostMissing"});
 const url = new URL(`https://${publicHost}`);
 if (url.hostname.toLowerCase() !== publicHost.toLowerCase())
-    throw new Error("Ten mien QR khong hop le.");
-            if (!csrfToken) throw new Error("Không tìm thấy mã xác thực biểu mẫu. Vui lòng tải lại trang.");
+    throw Object.assign(new Error("Ten mien QR khong hop le."), {uiKey: "publicHostInvalid"});
+            if (!csrfToken) throw Object.assign(new Error("Không tìm thấy mã xác thực biểu mẫu. Vui lòng tải lại trang."), {uiKey: "csrfMissing"});
             issueQrButton.disabled = true;
             if (!currentOrderCode) await createOrder();
             const ticket = await callApi("/api/demo/qr/issue", {
@@ -172,22 +178,23 @@ if (url.hostname.toLowerCase() !== publicHost.toLowerCase())
             });
             const paymentUrl = new URL("/demo/qr/pay", url.origin);
             paymentUrl.searchParams.set("code", ticket.code);
-            if (typeof window.renderDemoQr !== "function") throw new Error("Thư viện QR chưa tải được.");
+            paymentUrl.searchParams.set("lang", window.TMUI?.language() || "vi");
+            if (typeof window.renderDemoQr !== "function") throw Object.assign(new Error("Thư viện QR chưa tải được."), {uiKey: "qrLibraryMissing"});
             window.renderDemoQr(canvas, paymentUrl.toString());
             const placeholder = document.querySelector(".qr-placeholder");
             if (placeholder) placeholder.hidden = true;
             if (canvas) canvas.hidden = false;
             if (help) {
                 help.hidden = false;
-                help.textContent = "Dùng điện thoại quét để xác nhận thanh toán mô phỏng. Thiết bị đang hiển thị QR sẽ nhận 900 giây.";
+                say(help, "scanInstruction", "Dùng điện thoại quét để xác nhận thanh toán mô phỏng. Thiết bị đang hiển thị QR sẽ nhận 900 giây.");
             }
-            document.getElementById("qr-heading").textContent = "QR THANH TOÁN (MÔ PHỎNG)";
-            document.querySelector(".qr-note").textContent = "900 giây được cộng cho thiết bị hiển thị QR; điện thoại quét chỉ xác nhận thanh toán.";
-            feedback.textContent = "QR đã tạo. Chờ điện thoại xác nhận; thiết bị này sẽ tự mở Narration sau khi thanh toán thành công.";
-            updateStatus("Chờ quét QR thanh toán");
+            say(document.getElementById("qr-heading"), "demoQr", "QR THANH TOÁN (MÔ PHỎNG)");
+            say(document.querySelector(".qr-note"), "creditNote", "900 giây được cộng cho thiết bị hiển thị QR; điện thoại quét chỉ xác nhận thanh toán.");
+            say(feedback, "qrReady", "QR đã tạo. Chờ điện thoại xác nhận; thiết bị này sẽ tự mở Narration sau khi thanh toán thành công.");
+            updateStatus("waiting", "Chờ quét QR thanh toán");
             void checkOrder();
         } catch (error) {
-            feedback.textContent = "Không tạo được QR: " + error.message;
+            say(feedback, error.uiKey || "qrError", "Không tạo được QR: " + error.message);
         } finally { issueQrButton.disabled = false; }
     });
     // Bộ duyệt có thể tạm hoãn timer khi tab bị ẩn; kiểm tra ngay khi quay về.

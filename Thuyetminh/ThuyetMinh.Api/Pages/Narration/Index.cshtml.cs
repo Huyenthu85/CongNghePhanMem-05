@@ -16,6 +16,8 @@ public sealed class ApprovedShopInfo
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public double ActivationRadiusMeters { get; set; }
+    public long? PublishedVersionId { get; set; }
+    public Dictionary<string, string> Descriptions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public class IndexModel : PageModel
@@ -27,7 +29,7 @@ public class IndexModel : PageModel
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
 
-    public bool RequireGps => _configuration.GetValue<bool>("Listening:RequireGps");
+    public bool RequireGps => _configuration.GetValue("Listening:RequireGps", true) || !_environment.IsDevelopment();
     public long ShopId { get; private set; }
     public long RemainingSeconds { get; private set; }
     public List<ApprovedShopInfo> ApprovedShops { get; private set; } = new();
@@ -41,6 +43,33 @@ public class IndexModel : PageModel
         _db = db;
         _environment = environment;
         _configuration = configuration;
+    }
+
+    private static string PreviewText(string value)
+    {
+        const int limit = 220;
+
+        var text = string.Join(
+            " ",
+            value.Split(
+                (char[]?)null,
+                StringSplitOptions.RemoveEmptyEntries
+            )
+        );
+
+        var starts = System.Globalization.StringInfo
+            .ParseCombiningCharacters(text);
+
+        if (starts.Length <= limit)
+            return text;
+
+        int end = starts[limit];
+        int space = text.LastIndexOf(' ', end - 1);
+
+        if (space > end * 0.8)
+            end = space;
+
+        return text[..end].TrimEnd() + "…";
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -82,9 +111,69 @@ public class IndexModel : PageModel
                 Address = x.Address,
                 Latitude = x.Latitude,
                 Longitude = x.Longitude,
-                ActivationRadiusMeters = x.ActivationRadiusMeters
+                ActivationRadiusMeters = x.ActivationRadiusMeters,
+                PublishedVersionId = x.PublishedVersionId
             })
             .ToListAsync();
+        var published = from shop in _db.Shops.AsNoTracking()
+                        join sub in _db.ShopSubmissions.AsNoTracking()
+                            on shop.PublishedVersionId equals (long?)sub.Id
+                        where shop.PublishStatus == PublishStatus.Approved
+                           && sub.Status == SubmissionStatus.Approved
+                           && sub.ShopId == shop.Id
+                        select new
+                        {
+                            ShopId = shop.Id,
+                            SubmissionId = sub.Id,
+                            sub.Description
+                        };
+
+        var approvedById = ApprovedShops.ToDictionary(x => x.Id);
+
+        foreach (var item in await published.ToListAsync())
+        {
+            if (approvedById.TryGetValue(item.ShopId, out var shop)
+                && shop.PublishedVersionId == item.SubmissionId
+                && !string.IsNullOrWhiteSpace(item.Description))
+            {
+                shop.Descriptions["vi"] = item.Description.Trim();
+            }
+        }
+
+        var translations = await (
+            from item in published
+            join t in _db.Translations.AsNoTracking()
+                on item.SubmissionId equals t.ShopSubmissionId
+            join l in _db.Languages.AsNoTracking()
+                on t.LanguageId equals l.Id
+            where t.Status == "Success" && l.IsActive
+            select new
+            {
+                item.ShopId,
+                item.SubmissionId,
+                l.Code,
+                t.TranslatedText
+            }
+        ).ToListAsync();
+
+        foreach (var item in translations)
+        {
+            var code = item.Code.ToLowerInvariant();
+
+            if (code is not ("vi" or "en" or "zh" or "km"))
+                continue;
+
+            if (approvedById.TryGetValue(item.ShopId, out var shop)
+                && shop.PublishedVersionId == item.SubmissionId
+                && !string.IsNullOrWhiteSpace(item.TranslatedText))
+            {
+                shop.Descriptions.TryAdd(
+                    code,
+                    item.TranslatedText.Trim()
+                );
+            }
+        }
+
         ShopId = ApprovedShops.FirstOrDefault()?.Id ?? 0;
 
         // Preserve the original direct-local development fallback.
