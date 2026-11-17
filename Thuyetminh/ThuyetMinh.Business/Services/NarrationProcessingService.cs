@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using ThuyetMinh.Data;
 using ThuyetMinh.Data.Models;
@@ -8,10 +7,13 @@ namespace ThuyetMinh.Business.Services;
 public class NarrationProcessingService
 {
     private readonly AppDbContext _db;
-    private readonly TranslationService _translations;
     private readonly IMachineTranslationService _translator;
-    private readonly AudioService _audios;
     private readonly ITtsService _tts;
+
+    private static readonly SemaphoreSlim Gate = new(1, 1);
+
+    private static readonly string[] Codes =
+        { "vi", "en", "zh", "km" };
 
     public NarrationProcessingService(
         AppDbContext db,
@@ -21,100 +23,269 @@ public class NarrationProcessingService
         ITtsService tts)
     {
         _db = db;
-        _translations = translations;
         _translator = translator;
-        _audios = audios;
         _tts = tts;
     }
 
     public async Task<Dictionary<string, string>> ProcessAsync(
         long submissionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, bool automatic = false)
+    {
+        await Gate.WaitAsync(cancellationToken);
+
+        try
+        {
+            return await ProcessCoreAsync(
+                submissionId, cancellationToken, automatic);
+        }
+        finally
+        {
+            Gate.Release();
+        }
+    }
+
+    private async Task<Dictionary<string, string>> ProcessCoreAsync(
+        long submissionId,
+        CancellationToken cancellationToken,
+        bool automatic)
     {
         var sub = await _db.ShopSubmissions
+            .AsNoTracking()
             .Include(x => x.Shop)
-            .FirstOrDefaultAsync(x => x.Id == submissionId, cancellationToken);
+            .FirstOrDefaultAsync(
+                x => x.Id == submissionId,
+                cancellationToken);
 
         if (sub == null)
-            throw new KeyNotFoundException("Khong tim thay bai gui.");
+            throw new KeyNotFoundException(
+                "Không tìm thấy bài gửi.");
 
         if (sub.Status != SubmissionStatus.Approved ||
             sub.Shop.PublishedVersionId != sub.Id ||
             sub.Shop.PublishStatus != PublishStatus.Approved)
-            throw new InvalidOperationException("Bai gui chua duoc xuat ban.");
+            throw new InvalidOperationException(
+                "Bài gửi chưa được xuất bản.");
 
         if (string.IsNullOrWhiteSpace(sub.Description))
-            throw new InvalidOperationException("Bai gui chua co noi dung thuyet minh.");
+            throw new InvalidOperationException(
+                "Bài gửi chưa có nội dung thuyết minh.");
 
         var result = new Dictionary<string, string>();
-        var codes = new[] { "vi", "en", "zh", "km" };
 
-        foreach (var code in codes)
+        var webRoot = Path.GetFullPath(
+            Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"));
+
+        var audioDirectory = Path.Combine(
+            webRoot, "audio", "generated");
+
+        Directory.CreateDirectory(audioDirectory);
+
+        foreach (var code in Codes)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            int? jobId = null;
 
             try
             {
                 var language = await _db.Languages
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(
                         x => x.Code == code && x.IsActive,
                         cancellationToken);
 
                 if (language == null)
                 {
-                    result[code] = "Failed: Ngon ngu khong hoat dong";
+                    result[code] = "Failed: Ngôn ngữ không hoạt động.";
                     continue;
                 }
 
-                var translation = _translations.GetTranslation(
-                    submissionId, language.Id);
+                var job = await _db.ProcessingJobs
+                    .Where(x =>
+                        x.ShopSubmissionId == submissionId &&
+                        x.LanguageId == language.Id)
+                    .OrderByDescending(x => x.Id)
+                    .FirstOrDefaultAsync(cancellationToken);
 
-                if (translation == null)
+                if (job == null)
+                {
+                    job = new ProcessingJob
+                    {
+                        ShopSubmissionId = submissionId,
+                        LanguageId = language.Id,
+                        Status = "Pending",
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _db.ProcessingJobs.Add(job);
+                    await _db.SaveChangesAsync(cancellationToken);
+                }
+
+                var now = DateTime.UtcNow;
+
+                if (job.Status == "Success")
+                {
+                    var existingTranslation = await _db.Translations
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x =>
+                            x.ShopSubmissionId == submissionId &&
+                            x.LanguageId == language.Id,
+                            cancellationToken);
+
+                    if (existingTranslation != null &&
+                        existingTranslation.Status == "Success" &&
+                        !string.IsNullOrWhiteSpace(
+                            existingTranslation.TranslatedText))
+                    {
+                        var existingAudio = await _db.Audios
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(x =>
+                                x.TranslationId == existingTranslation.Id,
+                                cancellationToken);
+
+                        if (existingAudio != null &&
+                            existingAudio.Status == "Success" &&
+                            existingAudio.DurationSeconds > 0 &&
+                            AudioFileExists(
+                                webRoot, existingAudio.FilePath))
+                        {
+                            result[code] = "AudioAlreadyExists";
+                            continue;
+                        }
+                    }
+
+                    job.AttemptCount = 0;
+                }
+
+                if (job.Status == "Processing")
+                {
+                    var lastAttempt =
+                        job.LastAttemptAt ?? job.CreatedAt;
+
+                    if (now - lastAttempt <
+                        TimeSpan.FromMinutes(15))
+                    {
+                        result[code] = "AlreadyProcessing";
+                        continue;
+                    }
+
+                    job.Status = "Failed";
+                    job.ErrorMessage = "Interrupted processing.";
+                    job.CompletedAt = now;
+                    await _db.SaveChangesAsync(cancellationToken);
+                }
+
+                if (automatic && job.Status == "Failed")
+                {
+                    if (job.AttemptCount >= 4)
+                    {
+                        result[code] = "RetryLimitReached";
+                        continue;
+                    }
+
+                    var delayMinutes = job.AttemptCount switch
+                    {
+                        1 => 1,
+                        2 => 5,
+                        3 => 15,
+                        _ => 0
+                    };
+
+                    var failedAt =
+                        job.CompletedAt ??
+                        job.LastAttemptAt ??
+                        job.CreatedAt;
+
+                    if (now < failedAt.AddMinutes(delayMinutes))
+                    {
+                        result[code] = "WaitingForRetry";
+                        continue;
+                    }
+                }
+
+                if (!automatic && job.AttemptCount >= 4)
+                {
+                    job.AttemptCount = 0;
+                }
+
+                jobId = job.Id;
+                job.AttemptCount++;
+                job.LastAttemptAt = now;
+                job.Status = "Processing";
+                job.ErrorMessage = null;
+                job.CompletedAt = null;
+
+                await _db.SaveChangesAsync(cancellationToken);
+
+                var translation = await _db.Translations
+                    .FirstOrDefaultAsync(
+                        x => x.ShopSubmissionId == submissionId &&
+                             x.LanguageId == language.Id,
+                        cancellationToken);
+
+                bool translationChanged = false;
+
+                if (translation == null ||
+                    translation.Status != "Success" ||
+                    string.IsNullOrWhiteSpace(
+                        translation.TranslatedText))
                 {
                     var text = code == "vi"
                         ? sub.Description.Trim()
                         : await _translator.TranslateAsync(
-                            sub.Description, code, cancellationToken);
+                            sub.Description,
+                            code,
+                            cancellationToken);
 
                     if (string.IsNullOrWhiteSpace(text))
-                        throw new InvalidOperationException("Ban dich rong.");
+                        throw new InvalidOperationException(
+                            "Bản dịch rỗng.");
 
-                    translation = _translations.CreateTranslation(
-                        submissionId, language.Id, text);
+                    if (translation == null)
+                    {
+                        translation = new Translation
+                        {
+                            ShopSubmissionId = submissionId,
+                            LanguageId = language.Id
+                        };
+
+                        _db.Translations.Add(translation);
+                    }
+
+                    translation.TranslatedText = text.Trim();
+                    translation.Status = "Success";
+                    translationChanged = true;
+
+                    await _db.SaveChangesAsync(cancellationToken);
                 }
 
-                if (translation.Status != "Success")
+                var audio = await _db.Audios
+                    .FirstOrDefaultAsync(
+                        x => x.TranslationId == translation.Id,
+                        cancellationToken);
+
+                if (!translationChanged &&
+                    audio != null &&
+                    audio.Status == "Success" &&
+                    audio.DurationSeconds > 0 &&
+                    AudioFileExists(webRoot, audio.FilePath))
                 {
-                    result[code] = "Failed: Ban dich chua thanh cong";
+                    job.Status = "Success";
+                    job.CompletedAt = DateTime.UtcNow;
+                    job.ErrorMessage = null;
+
+                    await _db.SaveChangesAsync(cancellationToken);
+
+                    result[code] = "AudioAlreadyExists";
                     continue;
                 }
 
-                var audio = _audios.GetAudioByTranslationId(
-                    translation.Id);
+                // Use a new filename to preserve existing audio files.
+                var fileName =
+                    $"submission-{submissionId}-{code}-{Guid.NewGuid():N}.mp3";
 
-                if (audio != null)
-                {
-                    result[code] = audio.Status == "Success"
-                        ? "AudioAlreadyExists"
-                        : "Failed: Audio da ton tai nhung chua thanh cong";
-                    continue;
-                }
-
-                var webRoot = Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "wwwroot");
-
-                var audioDirectory = Path.Combine(
-                    webRoot, "audio", "generated");
-
-                Directory.CreateDirectory(audioDirectory);
-
-                var fileName = $"submission-{submissionId}-{code}.mp3";
-                var outputPath = Path.Combine(audioDirectory, fileName);
-
-                if (File.Exists(outputPath))
-                    throw new InvalidOperationException(
-                        "File MP3 da ton tai nhung chua co ban ghi Audio. Can kiem tra truoc khi tao lai.");
+                var outputPath = Path.Combine(
+                    audioDirectory, fileName);
 
                 var generated = await _tts.GenerateAsync(
                     translation.TranslatedText,
@@ -122,25 +293,96 @@ public class NarrationProcessingService
                     outputPath,
                     cancellationToken);
 
-                var publicPath = $"/audio/generated/{fileName}";
+                if (!File.Exists(outputPath) ||
+                    new FileInfo(outputPath).Length == 0 ||
+                    generated.DurationSeconds <= 0)
+                {
+                    throw new InvalidOperationException(
+                        "File MP3 không hợp lệ.");
+                }
 
-                _audios.CreateAudio(
-                    translation.Id,
-                    publicPath,
-                    generated.DurationSeconds);
+                if (audio == null)
+                {
+                    audio = new Audio
+                    {
+                        TranslationId = translation.Id
+                    };
+
+                    _db.Audios.Add(audio);
+                }
+
+                audio.FilePath =
+                    $"/audio/generated/{fileName}";
+
+                audio.DurationSeconds =
+                    generated.DurationSeconds;
+
+                audio.Status = "Success";
+
+                job.Status = "Success";
+                job.ErrorMessage = null;
+                job.CompletedAt = DateTime.UtcNow;
+
+                await _db.SaveChangesAsync(cancellationToken);
 
                 result[code] = "AudioCreated";
             }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
+                _db.ChangeTracker.Clear();
+
+                if (jobId.HasValue)
+                {
+                    var failedJob = await _db.ProcessingJobs
+                        .FirstOrDefaultAsync(
+                            x => x.Id == jobId.Value,
+                            CancellationToken.None);
+
+                    if (failedJob != null)
+                    {
+                        failedJob.Status = "Failed";
+                        failedJob.ErrorMessage = ex.Message;
+                        failedJob.CompletedAt = DateTime.UtcNow;
+
+                        await _db.SaveChangesAsync(
+                            CancellationToken.None);
+                    }
+                }
+
                 result[code] = "Failed: " + ex.Message;
+
+                if (cancellationToken.IsCancellationRequested)
+                    throw;
             }
         }
 
         return result;
+    }
+
+    private static bool AudioFileExists(
+        string webRoot,
+        string relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath))
+            return false;
+
+        var path = relativePath.Replace('\\', '/');
+
+        if (!path.StartsWith("/audio/",
+                StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var fullPath = Path.GetFullPath(
+            Path.Combine(webRoot, path.TrimStart('/')));
+
+        var rootPrefix = webRoot.TrimEnd(
+            Path.DirectorySeparatorChar) +
+            Path.DirectorySeparatorChar;
+
+        return fullPath.StartsWith(
+                   rootPrefix,
+                   StringComparison.OrdinalIgnoreCase) &&
+               File.Exists(fullPath) &&
+               new FileInfo(fullPath).Length > 0;
     }
 }

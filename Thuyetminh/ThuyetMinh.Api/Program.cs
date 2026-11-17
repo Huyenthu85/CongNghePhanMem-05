@@ -38,6 +38,7 @@ builder.Services.AddScoped<TranslationRepository>();
 builder.Services.AddScoped<TranslationService>();
 builder.Services.AddScoped<IMachineTranslationService, MachineTranslationService>();
 builder.Services.AddScoped<NarrationProcessingService>();
+builder.Services.AddHostedService<ThuyetMinh.Api.Workers.NarrationProcessingWorker>();
 builder.Services.AddScoped<ITtsService, TtsService>();
 builder.Services.AddScoped<LanguageRepository>();
 builder.Services.AddScoped<LanguageService>();

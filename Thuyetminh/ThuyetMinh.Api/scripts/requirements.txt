@@ -1,0 +1,4 @@
+deep-translator==1.11.4
+edge-tts==7.3.1
+mutagen==1.48.1
+gTTS==2.5.4

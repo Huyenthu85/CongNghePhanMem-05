@@ -12,5 +12,7 @@ namespace ThuyetMinh.Data.Models
         public string? ErrorMessage { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedAt { get; set; }
+        public int AttemptCount { get; set; }
+        public DateTime? LastAttemptAt { get; set; }
     }
 }

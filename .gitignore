@@ -10,3 +10,7 @@ obj/
 .vs/
 .idea/
 *.user
+.venv/
+__pycache__/
+*.pyc
+/Thuyetminh/ThuyetMinh.Api/wwwroot/audio/generated/
