@@ -1160,3 +1160,33 @@ button {
         margin-left: auto;
     }
 }
+
+/* Compact header balance */
+.header-balance {
+    height: 38px;
+    min-width: 104px;
+    padding: 3px 10px;
+    gap: 2px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.header-balance small {
+    font-size: 9px;
+    line-height: 11px;
+}
+
+.header-balance strong {
+    font-size: 15px;
+    line-height: 17px;
+}
+
+@media (max-width: 600px) {
+    .header-balance {
+        order: 0;
+        flex: 0 0 auto;
+        flex-direction: column;
+    }
+}

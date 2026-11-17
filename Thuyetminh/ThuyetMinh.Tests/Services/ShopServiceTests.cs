@@ -64,6 +64,7 @@ public class ShopServiceTests
             Latitude = 21.1,
             Longitude = 105.9,
             ActivationRadiusMeters = 100,
+            Description = "Nội dung thuyết minh mới.",
             Submit = true
         };
 

@@ -68,17 +68,22 @@ public class NarrationProcessingWorker : BackgroundService
             .Select(s => s.Id)
             .ToListAsync(cancellationToken);
 
-        var processor = scope.ServiceProvider
-            .GetRequiredService<NarrationProcessingService>();
-
         foreach (var submissionId in submissionIds)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
-            var result = await processor.ProcessAsync(
-                submissionId,
-                cancellationToken,
-                automatic: true);
+            Dictionary<string, string> result;
+            try
+            {
+                using var jobScope = _scopeFactory.CreateScope();
+                result = await jobScope.ServiceProvider.GetRequiredService<NarrationProcessingService>()
+                    .ProcessAsync(submissionId, cancellationToken, automatic: true);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Skipping failed submission {SubmissionId} this cycle.", submissionId);
+                continue;
+            }
 
             foreach (var item in result)
             {

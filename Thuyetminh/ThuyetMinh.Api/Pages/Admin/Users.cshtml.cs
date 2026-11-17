@@ -47,7 +47,9 @@ namespace ThuyetMinh.Api.Pages.Admin
                 return Page();
             }
             user.Active = !user.Active;
+            user.SessionVersion++;
             _db.SaveChanges();
+            _onlineUsers.Untrack($"account-{user.Id}");
             Message = user.Active ? $"Đã mở khoá {user.Username}." : $"Đã khoá {user.Username}.";
             LoadData();
             return Page();
@@ -57,11 +59,11 @@ namespace ThuyetMinh.Api.Pages.Admin
         {
             Users = _db.Users.OrderByDescending(u => u.Id).ToList();
             TotalVisitorProfiles = _db.AnonymousVisitors.Count() ;
-            OnlineUsers = _onlineUsers.GetOnlineUsers();
+            OnlineUsers = _onlineUsers.GetActualOnlineUsers(_db);
             OnlineCount = OnlineUsers.Count;
             ListeningCount = OnlineUsers.Count(u => u.IsListening);
-            OnlineUsernames = new HashSet<string>(OnlineUsers.Select(u => u.Username));
-            ListeningUsernames = new HashSet<string>(OnlineUsers.Where(u => u.IsListening).Select(u => u.Username));
+            OnlineUsernames = new HashSet<string>(OnlineUsers.Where(u => u.Role != "Guest").Select(u => u.Username));
+            ListeningUsernames = new HashSet<string>(OnlineUsers.Where(u => u.Role != "Guest" && u.IsListening).Select(u => u.Username));
             LastSeen = OnlineUsers.GroupBy(u => u.Username)
                 .ToDictionary(g => g.Key, g => g.Max(u => u.LastSeen));
         }

@@ -1,40 +1,19 @@
-using System.Security.Claims;
-using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ThuyetMinh.Api.Services;
+using ThuyetMinh.Business.Services;
+using ThuyetMinh.Data;
 
 namespace ThuyetMinh.Api.Controllers;
 
 [ApiController]
-public sealed class OnlinePresenceController : ControllerBase
+public sealed class OnlinePresenceController(OnlineUserService presence, AppDbContext db) : ControllerBase
 {
     // Da dang nhap cookie moi duoc tinh. API nay nam ngoai /api de dung cookie scheme hien co.
     [HttpPost("/presence/ping")]
     [Authorize(AuthenticationSchemes = "Cookies")]
     public IActionResult Ping()
     {
-        var username = User.Identity?.Name;
-        if (string.IsNullOrWhiteSpace(username))
-            username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrWhiteSpace(username)) username = "Tai khoan";
-
-        var sessionId = Request.Cookies["tm_online_session"];
-        if (string.IsNullOrWhiteSpace(sessionId) || sessionId.Length != 32 || !sessionId.All(Uri.IsHexDigit))
-        {
-            sessionId = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
-            Response.Cookies.Append("tm_online_session", sessionId, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = Request.IsHttps,
-                SameSite = SameSiteMode.Lax,
-                IsEssential = true,
-                Path = "/",
-                MaxAge = TimeSpan.FromHours(12)
-            });
-        }
-        OnlinePresenceTracker.Touch(sessionId, username);
         Response.Headers.CacheControl = "no-store";
         return Ok(new { online = true });
     }
@@ -43,14 +22,14 @@ public sealed class OnlinePresenceController : ControllerBase
     [Authorize(AuthenticationSchemes = "Cookies", Roles = "Admin")]
     public IActionResult Online()
     {
-        var users = OnlinePresenceTracker.GetOnline();
+        var users = presence.GetActualOnlineUsers(db);
         Response.Headers.CacheControl = "no-store";
         return Ok(new
         {
-            onlineSessions = users.Length,
-            distinctAccounts = users.Select(x => x.Username)
+            onlineSessions = users.Count,
+            distinctAccounts = users.Where(x => x.Role != "Guest").Select(x => x.Username)
                 .Distinct(StringComparer.OrdinalIgnoreCase).Count(),
-            users = users.Select(x => new { username = x.Username, lastSeenUtc = x.LastSeenUtc }).ToArray()
+            users = users.Select(x => new { username = x.Username, lastSeenUtc = x.LastSeen }).ToArray()
         });
     }
 

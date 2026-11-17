@@ -1,6 +1,7 @@
 using ThuyetMinh.Business.Dtos;
 using ThuyetMinh.Data.Models;
 using ThuyetMinh.Data.Repositories;
+using System.ComponentModel.DataAnnotations;
 
 namespace ThuyetMinh.Business.Services;
 
@@ -37,6 +38,7 @@ public class ShopService : IShopService
         long shopId, long ownerId, ShopSubmissionRequest req)
     {
         var shop = await GetMyShopAsync(shopId, ownerId);
+        ValidateSubmission(req);
 
         var sub = new ShopSubmission
         {
@@ -55,6 +57,35 @@ public class ShopService : IShopService
             IsUpdateRequest = shop.PublishedVersionId != null
         };
         return await _subs.AddAsync(sub);
+    }
+
+    public static string[] ParseImageUrls(string? raw) =>
+        (raw ?? "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(IsSafeImageUrl).Distinct().Take(10).ToArray();
+
+    private static bool IsSafeImageUrl(string url) =>
+        url.Length <= 2048 && !url.Any(char.IsControl) &&
+        Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+        (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+        string.IsNullOrEmpty(uri.UserInfo) && !string.IsNullOrEmpty(uri.Host);
+
+    public static void ValidateSubmission(ShopSubmissionRequest req)
+    {
+        var errors = new List<ValidationResult>();
+        if (!Validator.TryValidateObject(req, new ValidationContext(req), errors, true))
+            throw new BusinessException(errors[0].ErrorMessage ?? "Dữ liệu địa điểm không hợp lệ.");
+        if (!double.IsFinite(req.Latitude) || !double.IsFinite(req.Longitude) ||
+            !double.IsFinite(req.ActivationRadiusMeters))
+            throw new BusinessException("Tọa độ hoặc bán kính không hợp lệ.");
+        if (req.Submit && string.IsNullOrWhiteSpace(req.Description))
+            throw new BusinessException("Vui lòng nhập nội dung thuyết minh trước khi gửi duyệt.");
+        var urls = (req.ImageUrlsRaw ?? "").Split(new[] { '\r', '\n' },
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (urls.Length > 10 || urls.Any(x => !IsSafeImageUrl(x)))
+            throw new BusinessException("Tối đa 10 đường dẫn hình ảnh HTTP/HTTPS hợp lệ, mỗi dòng một địa chỉ.");
+        req.Name = req.Name.Trim();
+        req.Address = req.Address.Trim();
+        req.ImageUrlsRaw = string.Join("\n", urls);
     }
 
     public async Task<List<ShopSubmission>> ListMySubmissionsAsync(long shopId, long ownerId)

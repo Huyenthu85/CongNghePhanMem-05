@@ -42,8 +42,9 @@ public class ShopSubmissionRepository : IShopSubmissionRepository
 
     public Task<ShopSubmission?> FindLatestApprovedByShopIdAsync(long shopId) =>
         _db.ShopSubmissions
-            .Where(x => x.ShopId == shopId && x.Status == SubmissionStatus.Approved)
-            .OrderByDescending(x => x.ReviewedAt)
+            .Where(x => x.ShopId == shopId && x.Status == SubmissionStatus.Approved
+                && x.Shop.PublishStatus == PublishStatus.Approved
+                && x.Shop.PublishedVersionId == x.Id)
             .FirstOrDefaultAsync();
 
     public Task SaveChangesAsync() => _db.SaveChangesAsync();

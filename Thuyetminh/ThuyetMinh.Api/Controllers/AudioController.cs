@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ThuyetMinh.Business.Services;
+using ThuyetMinh.Data;
+using ThuyetMinh.Data.Models;
 namespace ThuyetMinh.Api.Controllers
 {
     [ApiController]
@@ -9,10 +11,13 @@ namespace ThuyetMinh.Api.Controllers
     public class AudioController : ControllerBase
     {
         private readonly AudioService _audioService;
-        public AudioController(AudioService audioService)
+        private readonly AppDbContext _db;
+        public AudioController(AudioService audioService, AppDbContext db)
         {
             _audioService = audioService;
+            _db = db;
         }
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public IActionResult GetAll()
         {
@@ -26,6 +31,7 @@ namespace ThuyetMinh.Api.Controllers
                 a.Status
             }));
         }
+        [Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
@@ -43,8 +49,13 @@ namespace ThuyetMinh.Api.Controllers
         [HttpGet("translation/{translationId}")]
         public IActionResult GetByTranslationId(int translationId)
         {
+            if (!_db.Translations.Any(t => t.Id == translationId && t.Status == "Success" &&
+                t.Language.IsActive && t.ShopSubmission.Status == SubmissionStatus.Approved &&
+                t.ShopSubmission.Shop.PublishStatus == PublishStatus.Approved &&
+                t.ShopSubmission.Shop.PublishedVersionId == t.ShopSubmissionId))
+                return NotFound();
             var audio = _audioService.GetAudioByTranslationId(translationId);
-            if (audio == null) return NotFound();
+            if (audio == null || audio.Status != "Success") return NotFound();
             return Ok(new
             {
                 audio.Id,

@@ -64,6 +64,11 @@ public class ShopFormModel : PageModel
     {
         var userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+        if (!ModelState.IsValid || action is not ("submit" or "draft"))
+        {
+            Message = "Vui lòng kiểm tra dữ liệu đã nhập.";
+            return Page();
+        }
         if (action == "submit" && string.IsNullOrWhiteSpace(Input.Description))
         {
             Message = "Vui lòng nhập nội dung thuyết minh trước khi gửi duyệt.";
@@ -84,6 +89,7 @@ public class ShopFormModel : PageModel
 
         try
         {
+            ShopService.ValidateSubmission(req);
             if (IsNew)
             {
                 // Nếu là tạo mới, ta tạo Shop trước (chưa public)
@@ -107,6 +113,11 @@ public class ShopFormModel : PageModel
             Message = action == "submit"
                 ? "Đã gửi duyệt. Vui lòng chờ quản trị viên phản hồi."
                 : "Đã lưu nháp.";
+            return Page();
+        }
+        catch (BusinessException ex)
+        {
+            Message = ex.Message;
             return Page();
         }
         catch (UnauthorizedAccessException)

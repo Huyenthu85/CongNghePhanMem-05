@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,18 @@ using ThuyetMinh.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 
-var connectionString = builder.Configuration.GetConnectionString("SqlServerTest");
+var connectionString = builder.Configuration.GetConnectionString(
+    builder.Environment.IsDevelopment() ? "SqlServerTest" : "SqlServer");
+builder.Configuration["Narration:WebRoot"] = builder.Environment.WebRootPath ??
+    Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+if (!builder.Environment.IsDevelopment())
+{
+    var productionSecret = Environment.GetEnvironmentVariable("Jwt__Secret");
+    if (string.IsNullOrWhiteSpace(productionSecret) ||
+        Encoding.UTF8.GetByteCount(productionSecret) < 32)
+        throw new InvalidOperationException("Production requires a private Jwt__Secret of at least 32 bytes.");
+    builder.Configuration["Jwt:Secret"] = productionSecret;
+}
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {
@@ -39,6 +51,7 @@ builder.Services.AddScoped<TranslationService>();
 builder.Services.AddScoped<IMachineTranslationService, MachineTranslationService>();
 builder.Services.AddScoped<NarrationProcessingService>();
 builder.Services.AddHostedService<ThuyetMinh.Api.Workers.NarrationProcessingWorker>();
+builder.Services.AddHostedService<ThuyetMinh.Api.Workers.ListeningSessionCleanupWorker>();
 builder.Services.AddScoped<ITtsService, TtsService>();
 builder.Services.AddScoped<LanguageRepository>();
 builder.Services.AddScoped<LanguageService>();
@@ -62,6 +75,10 @@ builder.Services.AddAuthentication(options =>
     options.ForwardDefaultSelector = context =>
     {
         // Náº¿u request báº¯t Ä‘áº§u báº±ng /api/ â†’ dĂ¹ng JWT
+        // Use the same authentication scheme as the Narration page.
+        if (context.Request.Path.StartsWithSegments("/api/listening"))
+            return "Cookies";
+
         if (context.Request.Path.StartsWithSegments("/api"))
             return JwtBearerDefaults.AuthenticationScheme;
         // NgÆ°á»£c láº¡i â†’ dĂ¹ng Cookie
@@ -73,6 +90,15 @@ builder.Services.AddAuthentication(options =>
     options.LoginPath = "/Login";
     options.AccessDeniedPath = "/Login";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.Events.OnValidatePrincipal = async ctx =>
+    {
+        var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+        if (!await AccountSessionValidator.IsValidAsync(db, ctx.Principal, ctx.HttpContext.RequestAborted))
+        {
+            ctx.RejectPrincipal();
+            await ctx.HttpContext.SignOutAsync("Cookies");
+        }
+    };
 })
 .AddJwtBearer(o =>
     {
@@ -87,12 +113,14 @@ builder.Services.AddAuthentication(options =>
         };
         o.Events = new JwtBearerEvents
         {
-            OnTokenValidated = ctx =>
+            OnTokenValidated = async ctx =>
             {
                 var raw = ctx.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
                 var svc = ctx.HttpContext.RequestServices.GetRequiredService<ITokenService>();
-                if (svc.IsBlacklisted(raw)) ctx.Fail("Token Ä‘Ă£ bá»‹ thu há»“i");
-                return Task.CompletedTask;
+                var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                if (svc.IsBlacklisted(raw) ||
+                    !await AccountSessionValidator.IsValidAsync(db, ctx.Principal, ctx.HttpContext.RequestAborted))
+                    ctx.Fail("Account session revoked.");
             }
         };
     });
@@ -208,7 +236,7 @@ using (var scope = app.Services.CreateScope())
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<User>>();
     db.Database.Migrate();
 
-    if (!db.Users.Any())
+    if (app.Environment.IsDevelopment() && !db.Users.Any())
     {
         var admin = new User { Username = "admin", Role = Role.Admin, FullName = "Quáº£n trá»‹ viĂªn", Active = true };
         admin.PasswordHash = hasher.HashPassword(admin, "admin123");
@@ -321,7 +349,9 @@ using (var scope = app.Services.CreateScope())
         x.Name == "QuĂ¡n Ä‚n Gia ÄĂ¬nh Phá»‘" && x.PublishStatus == PublishStatus.Approved);
     var publishedVersionId = demoShop?.PublishedVersionId;
     var viLanguage = db.Languages.FirstOrDefault(x => x.Code == "vi");
-    if (publishedVersionId != null && viLanguage != null)
+    if (app.Environment.IsDevelopment() &&
+        app.Configuration.GetValue("Demo:SeedSampleAudio", false) &&
+        publishedVersionId != null && viLanguage != null)
     {
         var translation = db.Translations.FirstOrDefault(x =>
             x.ShopSubmissionId == publishedVersionId && x.LanguageId == viLanguage.Id);

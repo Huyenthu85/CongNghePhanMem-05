@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using ThuyetMinh.Data;
 using ThuyetMinh.Data.Models;
 
@@ -9,6 +10,7 @@ public class NarrationProcessingService
     private readonly AppDbContext _db;
     private readonly IMachineTranslationService _translator;
     private readonly ITtsService _tts;
+    private readonly string _webRoot;
 
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
@@ -20,11 +22,13 @@ public class NarrationProcessingService
         TranslationService translations,
         IMachineTranslationService translator,
         AudioService audios,
-        ITtsService tts)
+        ITtsService tts, IConfiguration configuration)
     {
         _db = db;
         _translator = translator;
         _tts = tts;
+        _webRoot = configuration["Narration:WebRoot"] ??
+            Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
     }
 
     public async Task<Dictionary<string, string>> ProcessAsync(
@@ -72,8 +76,7 @@ public class NarrationProcessingService
 
         var result = new Dictionary<string, string>();
 
-        var webRoot = Path.GetFullPath(
-            Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"));
+        var webRoot = Path.GetFullPath(_webRoot);
 
         var audioDirectory = Path.Combine(
             webRoot, "audio", "generated");

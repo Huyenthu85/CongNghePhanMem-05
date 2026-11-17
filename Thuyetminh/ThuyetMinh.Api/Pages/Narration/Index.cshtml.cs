@@ -17,6 +17,7 @@ public sealed class ApprovedShopInfo
     public double Longitude { get; set; }
     public double ActivationRadiusMeters { get; set; }
     public long? PublishedVersionId { get; set; }
+    public string[] Images { get; set; } = Array.Empty<string>();
     public Dictionary<string, string> Descriptions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
@@ -102,19 +103,6 @@ public class IndexModel : PageModel
                 return Redirect("/payment");
         }
 
-        ApprovedShops = await _db.Shops.AsNoTracking()
-            .Where(x => x.PublishStatus == PublishStatus.Approved)
-            .Select(x => new ApprovedShopInfo
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Address = x.Address,
-                Latitude = x.Latitude,
-                Longitude = x.Longitude,
-                ActivationRadiusMeters = x.ActivationRadiusMeters,
-                PublishedVersionId = x.PublishedVersionId
-            })
-            .ToListAsync();
         var published = from shop in _db.Shops.AsNoTracking()
                         join sub in _db.ShopSubmissions.AsNoTracking()
                             on shop.PublishedVersionId equals (long?)sub.Id
@@ -125,20 +113,26 @@ public class IndexModel : PageModel
                         {
                             ShopId = shop.Id,
                             SubmissionId = sub.Id,
-                            sub.Description
+                            sub.Description, sub.Name, sub.Address, sub.Latitude,
+                            sub.Longitude, sub.ActivationRadiusMeters, sub.ImageUrlsRaw
                         };
-
-        var approvedById = ApprovedShops.ToDictionary(x => x.Id);
 
         foreach (var item in await published.ToListAsync())
         {
-            if (approvedById.TryGetValue(item.ShopId, out var shop)
-                && shop.PublishedVersionId == item.SubmissionId
-                && !string.IsNullOrWhiteSpace(item.Description))
+            var shop = new ApprovedShopInfo
             {
+                Id = item.ShopId, PublishedVersionId = item.SubmissionId,
+                Name = item.Name, Address = item.Address,
+                Latitude = item.Latitude, Longitude = item.Longitude,
+                ActivationRadiusMeters = item.ActivationRadiusMeters,
+                Images = ShopService.ParseImageUrls(item.ImageUrlsRaw)
+            };
+            if (!string.IsNullOrWhiteSpace(item.Description))
                 shop.Descriptions["vi"] = item.Description.Trim();
-            }
+            ApprovedShops.Add(shop);
         }
+        ApprovedShops = ApprovedShops.OrderBy(x => x.Id).ToList();
+        var approvedById = ApprovedShops.ToDictionary(x => x.Id);
 
         var translations = await (
             from item in published

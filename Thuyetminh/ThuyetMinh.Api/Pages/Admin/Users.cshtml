@@ -107,7 +107,7 @@
 </table>
 
 <h3 style="margin-top: 32px;">Khách ẩn danh đang truy cập</h3>
-@if (!Model.OnlineUsernames.Any(u => u.StartsWith("Khách-")))
+@if (!Model.OnlineUsers.Any(u => u.Role == "Guest"))
 {
     <p style="color: var(--text-muted);">Không có khách ẩn danh nào.</p>
 }
@@ -124,7 +124,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var u in Model.OnlineUsers.Where(x => x.Username.StartsWith("Khách-")))
+            @foreach (var u in Model.OnlineUsers.Where(x => x.Role == "Guest"))
             {
                 <tr>
                     <td>

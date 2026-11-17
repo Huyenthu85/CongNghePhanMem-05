@@ -36,7 +36,7 @@ public class ReviewService : IReviewService
         var admin = await _users.FindByIdAsync(adminId)
             ?? throw new UnauthorizedAccessException("KhĂ´ng pháº£i admin");
 
-        if (admin.Role != Role.Admin)
+        if (admin.Role != Role.Admin || !admin.Active)
             throw new UnauthorizedAccessException("KhĂ´ng cĂ³ quyá»n duyá»‡t bĂ i");
 
         var sub = await _subs.FindByIdAsync(submissionId)
@@ -47,6 +47,12 @@ public class ReviewService : IReviewService
 
         if (req.Approve)
         {
+            ShopService.ValidateSubmission(new ShopSubmissionRequest
+            {
+                Name = sub.Name, Address = sub.Address, Latitude = sub.Latitude,
+                Longitude = sub.Longitude, ActivationRadiusMeters = sub.ActivationRadiusMeters,
+                Description = sub.Description, ImageUrlsRaw = sub.ImageUrlsRaw, Submit = true
+            });
             sub.Status = SubmissionStatus.Approved;
             sub.RejectionReason = null;
 
@@ -112,6 +118,12 @@ public class ReviewService : IReviewService
     {
         var shop = await _shops.FindByIdAsync(shopId)
             ?? throw new KeyNotFoundException("Shop khĂ´ng tá»“n táº¡i");
+        if (!Enum.IsDefined(status))
+            throw new BusinessException("Trạng thái xuất bản không hợp lệ.");
+        if (status == PublishStatus.Approved &&
+            !await _db.ShopSubmissions.AnyAsync(s => s.ShopId == shop.Id &&
+                s.Id == shop.PublishedVersionId && s.Status == SubmissionStatus.Approved))
+            throw new BusinessException("Quán chưa có phiên bản được duyệt.");
         shop.PublishStatus = status;
         await _shops.SaveChangesAsync();
     }

@@ -123,31 +123,8 @@
 <script src="~/js/narration-listening.js" asp-append-version="true" defer></script>
 <script>
 (() => {
-    // Danh mục giới thiệu tham khảo; ID thực tế chỉ xác định theo bản ghi đã duyệt trong SQL Server.
-    const shops = [
-    { slug:'truong-dh-sai-gon-cs1', shopId:null, name:'Trường Đại Học Sài Gòn - Cơ sở 1', address:'105 Bà Huyện Thanh Quan, Phường 7, Quận 3, TP.HCM', lat:10.7795, lon:106.6845, desc:'Trường Đại học Sài Gòn - một trong những cơ sở giáo dục lâu đời và uy tín nhất khu vực phía Nam.', image:'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1100&q=80' },
-        { slug:'gia-dinh-pho', shopId:null, name:'Quán Ăn Gia Đình Phố', address:'123 Lý Tự Trọng, Phường Bến Thành, Quận 1, TP.HCM', lat:10.7743, lon:106.6978, desc:'Quán ăn gia đình với các món Việt truyền thống, không gian ấm cúng.', image:'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1100&q=80' },
-        { slug:'bun-cha-36-pho', shopId:null, name:'Bún Chả Hà Nội 36 Phố', address:'36 Nguyễn Trãi, Phường Bến Thành, Quận 1, TP.HCM', lat:10.7712, lon:106.6935, desc:'Hương vị bún chả chuẩn Hà Nội giữa lòng Sài Gòn, nướng than hoa.', image:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1100&q=80' },
-        { slug:'pho-sai-gon-xua', shopId:null, name:'Phở Bò Sài Gòn Xưa', address:'150 Pasteur, Phường 6, Quận 3, TP.HCM', lat:10.7823, lon:106.6930, desc:'Phở bò nấu theo công thức gia truyền hơn 30 năm, nước dùng thanh ngọt.', image:'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1100&q=80' },
-        { slug:'oc-dem-sai-thanh', shopId:null, name:'Ốc Đêm Sài Thành', address:'45 Võ Văn Tần, Phường 6, Quận 3, TP.HCM', lat:10.7790, lon:106.6915, desc:'Quán ốc đêm với đa dạng các món ốc, ghẹ và tôm hấp bia.', image:'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1100&q=80' },
-        { slug:'com-tam-ba-ghien', shopId:null, name:'Cơm Tấm Ba Ghiền', address:'84 Đặng Văn Ngữ, Phường 10, Phú Nhuận, TP.HCM', lat:10.7996, lon:106.6790, desc:'Cơm tấm sườn nướng mật ong, ăn kèm chả trứng và nước mắm chua ngọt.', image:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1100&q=80' }
-    ];
     const approvedShops = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApprovedShops, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)));
-    // Synchronize approved database shops with the existing cards.
-    for (const item of approvedShops) {
-        const existing = shops.find(x =>
-            x.name === item.name && x.address === item.address);
-
-        if (existing) {
-            existing.shopId = item.id;
-            existing.lat = item.latitude;
-            existing.lon = item.longitude;
-            existing.publishedDescriptions = item.descriptions || {};
-            existing.desc = item.descriptions?.vi || 'Địa điểm đã được duyệt trong hệ thống.';
-            continue;
-        }
-
-        shops.push({
+    const shops = approvedShops.map(item => ({
             slug: `approved-${item.id}`,
             shopId: item.id,
             name: item.name,
@@ -156,9 +133,9 @@
             lon: item.longitude,
             desc: item.descriptions?.vi || 'Địa điểm đã được duyệt trong hệ thống.',
             publishedDescriptions: item.descriptions || {},
-            image: shops[0].image
-        });
-    }
+            image: item.images?.[0] || '/images/place-placeholder.svg',
+            images: item.images?.length ? item.images : ['/images/place-placeholder.svg']
+    }));
 
     const factCount = document.querySelector('.hero-facts strong');
     if (factCount) {
@@ -176,7 +153,16 @@
     };
     const escapeHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const params = new URLSearchParams(location.search);
-    const selected = shops.find(x => x.slug === params.get('place'));
+    // Also track paid visitors while browsing without playing audio.
+    if (@Model.RemainingSeconds > 0) {
+        setInterval(() => {
+            if (!document.hidden)
+                fetch('/api/visitor/me', {credentials:'same-origin', cache:'no-store'}).catch(() => {});
+        }, 15000);
+    }
+    const legacyPlace = {'gia-dinh-pho':'approved-1','bun-cha-36-pho':'approved-2',
+        'pho-sai-gon-xua':'approved-3','oc-dem-sai-thanh':'approved-4','com-tam-ba-ghien':'approved-5'};
+    const selected = shops.find(x => x.slug === (legacyPlace[params.get('place')] || params.get('place')));
     document.querySelectorAll('a[href^="/Narration"]').forEach(a => {
         const url = new URL(a.getAttribute('href'), location.origin);
         if (params.get('preview') === '1') url.searchParams.set('preview', '1');
@@ -355,10 +341,11 @@
         $('detail-view').hidden = true;
         $('shop-grid').innerHTML = shops.map(s => `
             <a class="shop-card" href="/Narration?place=${encodeURIComponent(s.slug)}${params.get('preview') === '1' ? '&preview=1' : ''}">
-                <div class="shop-card-image"><img src="${s.image}" alt="Ảnh minh họa ${escapeHtml(s.name)}" loading="lazy"></div>
+                <div class="shop-card-image"><img src="${escapeHtml(s.image)}" alt="Ảnh minh họa ${escapeHtml(s.name)}" loading="lazy"></div>
                 <div class="shop-card-body"><span class="section-label">QUÁN ĂN • TP.HCM</span><h2>${escapeHtml(s.name)}</h2><p class="shop-address" data-original-address="${escapeHtml(s.address)}">${escapeHtml(s.address)}</p><p data-original-description="${escapeHtml(s.desc)}">${escapeHtml(s.desc)}</p><span class="card-arrow">Xem chi tiết →</span></div>
             </a>`).join('');
         window.TMNarration?.localizeCards();
+        $('search-empty').hidden = shops.length !== 0;
 
         $('shop-grid').querySelectorAll('.shop-card').forEach((card,i) => {
             const shop = shops[i];
@@ -406,13 +393,13 @@
     else $('map-note').textContent = selected.address;
 
     // Bộ ảnh minh họa; nếu chưa có ảnh bổ sung của quán thì chỉ hiển thị ảnh hiện có.
-    const galleryImages = [selected.image];
+    const galleryImages = selected.images;
     let galleryIndex = 0;
     const renderGallery = () => {
         $('detail-photo').src = galleryImages[galleryIndex];
         $('gallery-count').textContent = `${galleryIndex + 1} / ${galleryImages.length}`;
         $('gallery-thumbnails').innerHTML = galleryImages.map((url, i) =>
-            `<button type="button" class="gallery-thumb ${i === galleryIndex ? 'active' : ''}" data-index="${i}" aria-label="Xem ảnh ${i+1}"><img src="${url}" alt="Ảnh minh họa ${i+1}"></button>`
+            `<button type="button" class="gallery-thumb ${i === galleryIndex ? 'active' : ''}" data-index="${i}" aria-label="Xem ảnh ${i+1}"><img src="${escapeHtml(url)}" alt="Ảnh minh họa ${i+1}"></button>`
         ).join('');
         $('gallery-prev').hidden = galleryImages.length < 2;
         $('gallery-next').hidden = galleryImages.length < 2;

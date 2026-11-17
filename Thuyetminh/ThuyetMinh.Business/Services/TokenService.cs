@@ -32,7 +32,8 @@ public class JwtTokenService : ITokenService
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
+                new Claim("tm_session_version", user.SessionVersion.ToString())
             },
             expires: DateTime.UtcNow.AddHours(8),
             signingCredentials: new SigningCredentials(

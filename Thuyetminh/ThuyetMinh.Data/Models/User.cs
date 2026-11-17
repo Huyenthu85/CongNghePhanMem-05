@@ -10,6 +10,7 @@ public string? Address { get; set; }     // Địa chỉ nhà thực
     public Role Role { get; set; }
     public string? FullName { get; set; }
     public bool Active { get; set; } = true;
+    public int SessionVersion { get; set; }
 
     public ICollection<Shop> Shops { get; set; } = new List<Shop>();
 }
