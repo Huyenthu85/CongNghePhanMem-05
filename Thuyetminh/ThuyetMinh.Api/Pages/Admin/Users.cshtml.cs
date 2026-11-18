@@ -27,7 +27,7 @@ namespace ThuyetMinh.Api.Pages.Admin
         public int OnlineCount { get; set; }
         public int ListeningCount { get; set; }
         public int TotalVisitorProfiles { get; set; }
-        public string? Message { get; set; }
+        [TempData] public string? Message { get; set; }
 
         public void OnGet() => LoadData();
 
@@ -37,22 +37,19 @@ namespace ThuyetMinh.Api.Pages.Admin
             if (user == null)
             {
                 Message = "Lỗi: Không tìm thấy người dùng.";
-                LoadData();
-                return Page();
+                return RedirectToPage("/Admin/Users");
             }
             if (user.Username == "admin")
             {
                 Message = "Lỗi: Không thể khoá tài khoản admin gốc.";
-                LoadData();
-                return Page();
+                return RedirectToPage("/Admin/Users");
             }
             user.Active = !user.Active;
             user.SessionVersion++;
             _db.SaveChanges();
             _onlineUsers.Untrack($"account-{user.Id}");
             Message = user.Active ? $"Đã mở khoá {user.Username}." : $"Đã khoá {user.Username}.";
-            LoadData();
-            return Page();
+            return RedirectToPage("/Admin/Users");
         }
 
         private void LoadData()
