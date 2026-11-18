@@ -56,12 +56,9 @@ public class NarrationProcessingWorker : BackgroundService
         var db = scope.ServiceProvider
             .GetRequiredService<AppDbContext>();
 
-        var submissionIds = await db.ShopSubmissions
+        var submissionIds = await NarrationPublicationService.ProcessingCandidates(db)
             .AsNoTracking()
             .Where(s =>
-                s.Status == SubmissionStatus.Approved &&
-                s.Shop.PublishStatus == PublishStatus.Approved &&
-                s.Shop.PublishedVersionId == s.Id &&
                 s.Description != null &&
                 s.Description.Trim() != "")
             .OrderBy(s => s.Id)

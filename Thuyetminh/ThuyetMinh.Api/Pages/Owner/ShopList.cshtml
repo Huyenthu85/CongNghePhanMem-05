@@ -40,20 +40,50 @@ else
                 <td>@s.Address</td>
                 <td>@s.ActivationRadiusMeters</td>
                 <td>
-                    @switch (s.PublishStatus)
+                    @if (Model.LatestSubmissions.TryGetValue(s.Id, out var latest))
                     {
-                        case ThuyetMinh.Data.Models.PublishStatus.Draft:
-                            <span class="badge badge-draft">Nháp</span>
-                            break;
-                        case ThuyetMinh.Data.Models.PublishStatus.Pending:
-                            <span class="badge badge-pending">Chờ duyệt</span>
-                            break;
-                        case ThuyetMinh.Data.Models.PublishStatus.Approved:
-                            <span class="badge badge-approved">Đã duyệt</span>
-                            break;
-                        case ThuyetMinh.Data.Models.PublishStatus.Rejected:
-                            <span class="badge badge-rejected">Bị từ chối</span>
-                            break;
+                        switch (latest.Status)
+                        {
+                            case ThuyetMinh.Data.Models.SubmissionStatus.Draft:
+                                <span class="badge badge-draft">Nháp</span>
+                                break;
+
+                            case ThuyetMinh.Data.Models.SubmissionStatus.Pending:
+                                <span class="badge badge-pending">Chờ duyệt</span>
+                                break;
+
+                            case ThuyetMinh.Data.Models.SubmissionStatus.Approved:
+                                <span class="badge badge-approved">Đã duyệt</span>
+                                if (Model.LatestSubmissions.TryGetValue(s.Id, out var currentSubmission)
+                                    && (s.PublishedVersionId != currentSubmission.Id
+                                        || s.PublishStatus != ThuyetMinh.Data.Models.PublishStatus.Approved))
+                                {
+                                    <div style="font-size:12px; margin-top:5px;">
+                                        Chưa công bố phiên bản mới - audio chưa sẵn sàng.
+                                    </div>
+                                }
+                                break;
+
+                            case ThuyetMinh.Data.Models.SubmissionStatus.Rejected:
+                                <span class="badge badge-rejected">Bị từ chối</span>
+                                <div style="color:#ef4444; font-size:12px; margin-top:6px; overflow-wrap:anywhere;">
+                                    Lý do: @latest.RejectionReason
+                                </div>
+                                break;
+                        }
+
+                        if (s.PublishedVersionId.HasValue &&
+                            s.PublishStatus == ThuyetMinh.Data.Models.PublishStatus.Approved &&
+                            latest.Status != ThuyetMinh.Data.Models.SubmissionStatus.Approved)
+                        {
+                            <div style="font-size:12px; margin-top:6px; color:var(--text-muted);">
+                                Phiên bản cũ vẫn đang công bố
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge badge-draft">Nháp</span>
                     }
                 </td>
                 <td>

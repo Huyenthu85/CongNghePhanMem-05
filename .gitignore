@@ -14,3 +14,4 @@ obj/
 __pycache__/
 *.pyc
 /Thuyetminh/ThuyetMinh.Api/wwwroot/audio/generated/
+/Thuyetminh/ThuyetMinh.Api/App_Data/shop-images/

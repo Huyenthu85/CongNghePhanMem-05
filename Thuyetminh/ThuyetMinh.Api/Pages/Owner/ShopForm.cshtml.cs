@@ -13,20 +13,27 @@ public class ShopFormModel : PageModel
 {
     private readonly IShopService _shops;
     private readonly IShopRepository _shopRepo;
+    private readonly IWebHostEnvironment _environment;
 
-    public ShopFormModel(IShopService shops, IShopRepository shopRepo)
+    public ShopFormModel(IShopService shops, IShopRepository shopRepo, IWebHostEnvironment environment)
     {
         _shops = shops;
         _shopRepo = shopRepo;
+        _environment = environment;
     }
 
     [BindProperty] public long ShopId { get; set; }
     [BindProperty] public ShopFormInput Input { get; set; } = new();
+    [BindProperty] public List<IFormFile> ImageFiles { get; set; } = new();
+    [BindProperty] public bool ReplaceImages { get; set; }
+    [BindProperty] public List<string> RemovedImages { get; set; } = new();
+    public string[] ExistingImages { get; private set; } = Array.Empty<string>();
     public string? Message { get; set; }
     public bool IsNew => ShopId == 0;
 
     public async Task<IActionResult> OnGetAsync(long? id)
     {
+        Message = TempData["ShopFormMessage"] as string;
         if (id == null || id == 0)
         {
             return Page(); // Trả về form trống để tạo mới
@@ -37,20 +44,17 @@ public class ShopFormModel : PageModel
         {
             var shop = await _shops.GetMyShopAsync(id.Value, userId);
             ShopId = shop.Id;
-            var published = shop.PublishedVersionId.HasValue
-                ? (await _shops.ListMySubmissionsAsync(shop.Id, userId))
-                    .FirstOrDefault(x => x.Id == shop.PublishedVersionId)
-                : null;
+            var latest = (await _shops.ListMySubmissionsAsync(shop.Id, userId)).FirstOrDefault();
+            ExistingImages = ShopService.ParseImageUrls(latest?.ImageUrlsRaw);
 
             Input = new ShopFormInput
             {
-                Name = shop.Name,
-                Address = shop.Address,
-                Latitude = shop.Latitude,
-                Longitude = shop.Longitude,
-                ActivationRadiusMeters = shop.ActivationRadiusMeters,
-                Description = published?.Description,
-                ImageUrlsText = published?.ImageUrlsRaw
+                Name = latest?.Name ?? shop.Name,
+                Address = latest?.Address ?? shop.Address,
+                Latitude = latest?.Latitude ?? shop.Latitude,
+                Longitude = latest?.Longitude ?? shop.Longitude,
+                ActivationRadiusMeters = latest?.ActivationRadiusMeters ?? shop.ActivationRadiusMeters,
+                Description = latest?.Description
             };
             return Page();
         }
@@ -63,6 +67,19 @@ public class ShopFormModel : PageModel
     public async Task<IActionResult> OnPostAsync(string action)
     {
         var userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        try
+        {
+            if (!IsNew)
+            {
+                var latest = (await _shops.ListMySubmissionsAsync(ShopId, userId)).FirstOrDefault();
+                ExistingImages = ShopService.ParseImageUrls(latest?.ImageUrlsRaw);
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToPage("/Owner/ShopList");
+        }
 
         if (!ModelState.IsValid || action is not ("submit" or "draft"))
         {
@@ -83,13 +100,23 @@ public class ShopFormModel : PageModel
             Longitude = Input.Longitude,
             ActivationRadiusMeters = Input.ActivationRadiusMeters,
             Description = Input.Description,
-            ImageUrlsRaw = Input.ImageUrlsText ?? "",
+            ImageUrlsRaw = ReplaceImages ? "" : string.Join("\n", ExistingImages.Where(x => !RemovedImages.Contains(x))),
             Submit = action == "submit"
         };
 
         try
         {
             ShopService.ValidateSubmission(req);
+            var images = ShopService.ParseImageUrls(req.ImageUrlsRaw).ToList();
+            if (images.Count + ImageFiles.Count > 10)
+                throw new BusinessException("Mỗi quán được lưu tối đa 10 ảnh.");
+            if (ImageFiles.Any(f => f.Length < 12 || f.Length > 5L * 1024 * 1024)
+                || ImageFiles.Sum(f => f.Length) > 20L * 1024 * 1024)
+                throw new BusinessException("Ảnh phải có dung lượng tối đa 5 MB/ảnh và 20 MB/lượt tải.");
+            var extensions = new List<string>();
+            foreach (var file in ImageFiles)
+                extensions.Add(await GetImageExtensionAsync(file, HttpContext.RequestAborted));
+
             if (IsNew)
             {
                 // Nếu là tạo mới, ta tạo Shop trước (chưa public)
@@ -105,15 +132,40 @@ public class ShopFormModel : PageModel
                 };
                 await _shopRepo.AddAsync(shop);
                 ShopId = shop.Id;
+                ModelState.Remove(nameof(ShopId));
             }
-            
-            // Sau đó tạo Submission cho quán đó
+
+            if (ImageFiles.Count > 0)
+            {
+                var folder = Path.Combine(
+                    _environment.ContentRootPath,
+                    "App_Data", "shop-images", ShopId.ToString());
+
+                Directory.CreateDirectory(folder);
+
+                for (int i = 0; i < ImageFiles.Count; i++)
+                {
+                    var name = Guid.NewGuid().ToString("N") + extensions[i];
+
+                    await using var output = new FileStream(
+                        Path.Combine(folder, name), FileMode.CreateNew);
+
+                    await ImageFiles[i].CopyToAsync(
+                        output, HttpContext.RequestAborted);
+
+                    images.Add($"/images/shop-uploads/{ShopId}/{name}");
+                }
+            }
+
+            req.ImageUrlsRaw = string.Join("\n", images);
+
             await _shops.CreateSubmissionAsync(ShopId, userId, req);
-            
-            Message = action == "submit"
+
+            TempData["ShopFormMessage"] = action == "submit"
                 ? "Đã gửi duyệt. Vui lòng chờ quản trị viên phản hồi."
                 : "Đã lưu nháp.";
-            return Page();
+
+            return RedirectToPage(new { id = ShopId });
         }
         catch (BusinessException ex)
         {
@@ -124,6 +176,26 @@ public class ShopFormModel : PageModel
         {
             return RedirectToPage("/Owner/ShopList");
         }
+        catch (IOException)
+        {
+            Message = "Không thể lưu ảnh. Vui lòng chọn ảnh và thử lại.";
+            return Page();
+        }
+    }
+
+    private static async Task<string> GetImageExtensionAsync(IFormFile file, CancellationToken ct)
+    {
+        var header = new byte[12];
+        await using var stream = file.OpenReadStream();
+        await stream.ReadExactlyAsync(header, ct);
+        if (header[0] == 0xff && header[1] == 0xd8 && header[2] == 0xff)
+            return ".jpg";
+        if (header.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }))
+            return ".png";
+        if (header.AsSpan(0, 4).SequenceEqual("RIFF"u8)
+            && header.AsSpan(8, 4).SequenceEqual("WEBP"u8))
+            return ".webp";
+        throw new BusinessException("Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP hợp lệ.");
     }
 }
 
@@ -135,5 +207,4 @@ public class ShopFormInput
     public double Longitude { get; set; }
     public double ActivationRadiusMeters { get; set; }
     public string? Description { get; set; }
-    public string? ImageUrlsText { get; set; }
 }

@@ -39,6 +39,9 @@ public class ShopService : IShopService
     {
         var shop = await GetMyShopAsync(shopId, ownerId);
         ValidateSubmission(req);
+        if (ParseImageUrls(req.ImageUrlsRaw).Any(x => IsUploadedImageUrl(x)
+            && !x.StartsWith($"/images/shop-uploads/{shopId}/", StringComparison.Ordinal)))
+            throw new BusinessException("Không được sử dụng ảnh tải lên của quán khác.");
 
         var sub = new ShopSubmission
         {
@@ -63,11 +66,16 @@ public class ShopService : IShopService
         (raw ?? "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(IsSafeImageUrl).Distinct().Take(10).ToArray();
 
+    public static bool IsUploadedImageUrl(string url) =>
+        System.Text.RegularExpressions.Regex.IsMatch(url,
+            @"\A/images/shop-uploads/[1-9][0-9]*/[a-f0-9]{32}\.(jpg|png|webp)\z");
+
     private static bool IsSafeImageUrl(string url) =>
+        IsUploadedImageUrl(url) || (
         url.Length <= 2048 && !url.Any(char.IsControl) &&
         Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
         (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
-        string.IsNullOrEmpty(uri.UserInfo) && !string.IsNullOrEmpty(uri.Host);
+        string.IsNullOrEmpty(uri.UserInfo) && !string.IsNullOrEmpty(uri.Host));
 
     public static void ValidateSubmission(ShopSubmissionRequest req)
     {
@@ -82,7 +90,7 @@ public class ShopService : IShopService
         var urls = (req.ImageUrlsRaw ?? "").Split(new[] { '\r', '\n' },
             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (urls.Length > 10 || urls.Any(x => !IsSafeImageUrl(x)))
-            throw new BusinessException("Tối đa 10 đường dẫn hình ảnh HTTP/HTTPS hợp lệ, mỗi dòng một địa chỉ.");
+            throw new BusinessException("Tối đa 10 hình ảnh hợp lệ.");
         req.Name = req.Name.Trim();
         req.Address = req.Address.Trim();
         req.ImageUrlsRaw = string.Join("\n", urls);

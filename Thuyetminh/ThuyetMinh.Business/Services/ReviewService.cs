@@ -33,6 +33,10 @@ public class ReviewService : IReviewService
 
     public async Task<ShopSubmission> ReviewAsync(long submissionId, long adminId, ReviewRequest req)
     {
+        await using var transaction =
+            await _db.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable);
+
         var admin = await _users.FindByIdAsync(adminId)
             ?? throw new UnauthorizedAccessException("KhĂ´ng pháº£i admin");
 
@@ -47,6 +51,22 @@ public class ReviewService : IReviewService
 
         if (req.Approve)
         {
+            if (sub.Shop.PublishedVersionId is long publishedId
+                && publishedId > sub.Id)
+            {
+                throw new BusinessException(
+                    "Đã có phiên bản mới hơn được công bố. Vui lòng từ chối bài gửi cũ.");
+            }
+
+            if (await _db.ShopSubmissions.AnyAsync(x =>
+                x.ShopId == sub.ShopId
+                && x.Id > sub.Id
+                && x.Status == SubmissionStatus.Approved))
+            {
+                throw new BusinessException(
+                    "Đã có bài gửi mới hơn được duyệt. Vui lòng từ chối bài gửi cũ.");
+            }
+
             ShopService.ValidateSubmission(new ShopSubmissionRequest
             {
                 Name = sub.Name, Address = sub.Address, Latitude = sub.Latitude,
@@ -57,13 +77,12 @@ public class ReviewService : IReviewService
             sub.RejectionReason = null;
 
             var shop = sub.Shop;
-            shop.Name = sub.Name;
-            shop.Address = sub.Address;
-            shop.Latitude = sub.Latitude;
-            shop.Longitude = sub.Longitude;
-            shop.ActivationRadiusMeters = sub.ActivationRadiusMeters;
-            shop.PublishStatus = PublishStatus.Approved;
-            shop.PublishedVersionId = sub.Id;
+            // Keep the previous public version until the new audio is ready.
+            if (shop.PublishStatus != PublishStatus.Approved
+                || shop.PublishedVersionId == null)
+            {
+                shop.PublishStatus = PublishStatus.Pending;
+            }
 
             if (!string.IsNullOrWhiteSpace(sub.Description))
             {
@@ -101,7 +120,11 @@ public class ReviewService : IReviewService
             sub.RejectionReason = req.RejectionReason;
 
             var shop = sub.Shop;
-            if (shop.PublishedVersionId is null)
+            if (shop.PublishedVersionId is null
+                && !await _db.ShopSubmissions.AnyAsync(x =>
+                    x.ShopId == shop.Id
+                    && x.Id != sub.Id
+                    && x.Status == SubmissionStatus.Approved))
                 shop.PublishStatus = PublishStatus.Rejected;
         }
 
@@ -111,6 +134,7 @@ public class ReviewService : IReviewService
 
         await _subs.SaveChangesAsync();
         await _shops.SaveChangesAsync();
+        await transaction.CommitAsync();
         return sub;
     }
 

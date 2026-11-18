@@ -9,7 +9,7 @@
     Mọi thông tin tạo mới hoặc chỉnh sửa đều cần được quản trị viên duyệt trước khi công bố.
 </p>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     <input type="hidden" asp-for="ShopId" />
 
     <label>Tên quán *</label>
@@ -46,8 +46,38 @@
     <label>Mô tả</label>
     <textarea asp-for="Input.Description" maxlength="4000"></textarea>
 
-    <label>Ảnh (mỗi dòng một URL)</label>
-    <textarea asp-for="Input.ImageUrlsText" placeholder="https://example.com/a.jpg&#10;https://example.com/b.jpg"></textarea>
+    <label asp-for="ImageFiles">Hình ảnh quán</label>
+    <input asp-for="ImageFiles" type="file" multiple accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+    <p style="color:var(--text-muted); font-size:13px;">Tối đa 10 ảnh/quán, 5 MB/ảnh, 20 MB/lượt tải. JPG, PNG hoặc WEBP.</p>
+    @if (Model.ExistingImages.Length > 0)
+    {
+        <p>Ảnh đã lưu:</p>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+            @foreach (var image in Model.ExistingImages)
+            {
+                <label style="display:flex; flex-direction:column; gap:6px;">
+    <img src="@image" alt="Ảnh đã lưu"
+         style="width:120px; height:90px; object-fit:cover; border-radius:8px;" />
+
+    <span style="color:var(--danger); font-size:13px;">
+        <input type="checkbox"
+               name="RemovedImages"
+               value="@image"
+               checked="@Model.RemovedImages.Contains(image)"
+               class="remove-existing-image"
+               style="width:auto; margin:0;" />
+        Bỏ ảnh này
+    </span>
+</label>
+            }
+        </div>
+        <label style="display:flex; align-items:center; gap:8px;">
+            <input asp-for="ReplaceImages" style="width:auto; margin:0;" /> Thay toàn bộ ảnh cũ bằng ảnh mới (nếu không chọn ảnh mới, sẽ bỏ ảnh cũ).
+        </label>
+    }
+    <div id="imagePreview" style="display:flex; flex-wrap:wrap; gap:10px; margin:12px 0;"></div>
+    <p id="imageMessage" role="status" style="color:var(--danger); font-size:13px;"></p>
+    <p style="color:var(--text-muted); font-size:13px;">Ảnh mới chỉ được công bố sau khi quản trị viên duyệt bài.</p>
 
     @if (!string.IsNullOrEmpty(Model.Message))
     {
@@ -63,6 +93,69 @@
 
 @section Scripts {
     <script>
+        (() => {
+            const input = document.getElementById('ImageFiles');
+            const replace = document.getElementById('ReplaceImages');
+            const preview = document.getElementById('imagePreview');
+            const message = document.getElementById('imageMessage');
+            let urls = [];
+            function renderImages() {
+                urls.forEach(url => URL.revokeObjectURL(url));
+                urls = [];
+                preview.replaceChildren();
+                const files = Array.from(input.files);
+                const removedCount = document.querySelectorAll('.remove-existing-image:checked').length;
+                const kept = replace?.checked ? 0 : @Model.ExistingImages.Length - removedCount;
+                if (files.length + kept > 10 || files.some(f => f.size > 5 * 1024 * 1024)
+                    || files.reduce((sum, f) => sum + f.size, 0) > 20 * 1024 * 1024) {
+                    message.textContent = 'Vượt giới hạn ảnh. Vui lòng chọn lại hoặc thay ảnh cũ.';
+                    input.setCustomValidity(message.textContent);
+                    return;
+                }
+                message.textContent = '';
+                input.setCustomValidity('');
+                for (const file of files) {
+                    const url = URL.createObjectURL(file);
+                    urls.push(url);
+                    const image = document.createElement('img');
+                    image.src = url;
+                    image.alt = file.name;
+                    image.style.cssText = 'width:120px;height:90px;object-fit:cover;border-radius:8px';
+                    const wrapper = document.createElement('div');
+                    wrapper.style.cssText = 'position:relative; display:flex; flex-direction:column; gap:6px;';
+
+                    const removeButton = document.createElement('button');
+                    removeButton.type = 'button';
+                    removeButton.textContent = 'Xóa ảnh';
+                    removeButton.className = 'btn btn-danger';
+                    removeButton.style.cssText = 'font-size:12px; padding:4px 8px;';
+
+                    removeButton.addEventListener('click', () => {
+                        const transfer = new DataTransfer();
+
+                        Array.from(input.files).forEach(f => {
+                            if (f !== file) transfer.items.add(f);
+                        });
+
+                        input.files = transfer.files;
+                        renderImages();
+                    });
+
+                    wrapper.appendChild(image);
+                    wrapper.appendChild(removeButton);
+                    preview.appendChild(wrapper);
+                }
+            }
+            input.addEventListener('change', renderImages);
+            replace?.addEventListener('change', renderImages);
+
+            document.querySelectorAll('.remove-existing-image').forEach(box => {
+                box.addEventListener('change', renderImages);
+            });
+
+            renderImages();
+        })();
+
         // 1. Khởi tạo bản đồ (Mặc định ở TP.HCM)
         var map = L.map('map').setView([10.7769, 106.7009], 13); 
         

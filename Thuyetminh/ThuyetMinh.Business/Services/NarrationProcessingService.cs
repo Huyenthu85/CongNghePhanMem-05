@@ -64,11 +64,13 @@ public class NarrationProcessingService
             throw new KeyNotFoundException(
                 "Không tìm thấy bài gửi.");
 
-        if (sub.Status != SubmissionStatus.Approved ||
-            sub.Shop.PublishedVersionId != sub.Id ||
-            sub.Shop.PublishStatus != PublishStatus.Approved)
+        if (!await NarrationPublicationService
+            .ProcessingCandidates(_db)
+            .AnyAsync(s => s.Id == sub.Id, cancellationToken))
+        {
             throw new InvalidOperationException(
-                "Bài gửi chưa được xuất bản.");
+                "Bài gửi chưa được duyệt hoặc không còn là phiên bản cần xử lý.");
+        }
 
         if (string.IsNullOrWhiteSpace(sub.Description))
             throw new InvalidOperationException(
@@ -359,6 +361,7 @@ public class NarrationProcessingService
             }
         }
 
+        await NarrationPublicationService.TryPublishAsync(_db, submissionId, result, cancellationToken);
         return result;
     }
 

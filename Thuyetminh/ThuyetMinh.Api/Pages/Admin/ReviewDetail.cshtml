@@ -13,7 +13,29 @@
     <tr><th>Tọa độ</th><td>@Model.Submission.Latitude, @Model.Submission.Longitude</td></tr>
     <tr><th>Bán kính</th><td>@Model.Submission.ActivationRadiusMeters m</td></tr>
     <tr><th>Mô tả</th><td>@(Model.Submission.Description ?? "—")</td></tr>
-    <tr><th>Ảnh</th><td>@(Model.Submission.ImageUrlsRaw ?? "—")</td></tr>
+    <tr>
+        <th>Ảnh</th>
+        <td>
+            @{
+                var images = ThuyetMinh.Business.Services.ShopService.ParseImageUrls(Model.Submission.ImageUrlsRaw);
+            }
+            @if (images.Length == 0)
+            {
+                <span>Chưa có ảnh</span>
+            }
+            else
+            {
+                <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                    @foreach (var image in images)
+                    {
+                        <a href="@image" target="_blank" rel="noopener noreferrer">
+                            <img src="@image" alt="Ảnh quán gửi duyệt" style="width:180px; height:135px; object-fit:cover; border-radius:8px;" />
+                        </a>
+                    }
+                </div>
+            }
+        </td>
+    </tr>
     <tr><th>Ngày gửi</th><td>@Model.Submission.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td></tr>
 </table>
 

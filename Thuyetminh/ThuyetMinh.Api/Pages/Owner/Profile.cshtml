@@ -36,20 +36,42 @@
                         <td>@s.Name</td>
                         <td>@s.Address</td>
                         <td>
-                            @switch (s.PublishStatus)
+                            @switch (Model.GetReviewStatus(s))
                             {
-                                case ThuyetMinh.Data.Models.PublishStatus.Draft:
+                                case ThuyetMinh.Data.Models.SubmissionStatus.Draft:
                                     <span class="badge badge-draft">Nháp</span>
                                     break;
-                                case ThuyetMinh.Data.Models.PublishStatus.Pending:
+                                case ThuyetMinh.Data.Models.SubmissionStatus.Pending:
                                     <span class="badge badge-pending">Chờ duyệt</span>
                                     break;
-                                case ThuyetMinh.Data.Models.PublishStatus.Approved:
+                                case ThuyetMinh.Data.Models.SubmissionStatus.Approved:
                                     <span class="badge badge-approved">Đã duyệt</span>
+                                if (Model.LatestSubmissions.TryGetValue(s.Id, out var currentSubmission)
+                                    && (s.PublishedVersionId != currentSubmission.Id
+                                        || s.PublishStatus != ThuyetMinh.Data.Models.PublishStatus.Approved))
+                                {
+                                    <div style="font-size:12px; margin-top:5px;">
+                                        Chưa công bố phiên bản mới - audio chưa sẵn sàng.
+                                    </div>
+                                }
                                     break;
-                                case ThuyetMinh.Data.Models.PublishStatus.Rejected:
+                                case ThuyetMinh.Data.Models.SubmissionStatus.Rejected:
                                     <span class="badge badge-rejected">Bị từ chối</span>
                                     break;
+                            }
+                            @if (Model.LatestSubmissions.TryGetValue(s.Id, out var latest))
+                            {
+                                if (latest.Status == ThuyetMinh.Data.Models.SubmissionStatus.Rejected)
+                                {
+                                    <div>Lý do: @latest.RejectionReason</div>
+                                }
+
+                                if (s.PublishStatus == ThuyetMinh.Data.Models.PublishStatus.Approved
+                                    && s.PublishedVersionId.HasValue
+                                    && s.PublishedVersionId != latest.Id)
+                                {
+                                    <small>Phiên bản cũ vẫn đang công bố</small>
+                                }
                             }
                         </td>
                     </tr>

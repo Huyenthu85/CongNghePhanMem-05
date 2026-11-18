@@ -21,11 +21,34 @@ public class ProfileModel : PageModel
 
     public User CurrentUser { get; set; } = null!;
     public List<Shop> MyShops { get; set; } = new();
+    public Dictionary<long, ShopSubmission> LatestSubmissions { get; } = new();
+
+    public SubmissionStatus GetReviewStatus(Shop shop) =>
+        LatestSubmissions.TryGetValue(shop.Id, out var latest)
+            ? latest.Status
+            : shop.PublishStatus switch
+            {
+                PublishStatus.Approved => SubmissionStatus.Approved,
+                PublishStatus.Pending => SubmissionStatus.Pending,
+                PublishStatus.Rejected => SubmissionStatus.Rejected,
+                _ => SubmissionStatus.Draft
+            };
 
     public async Task OnGetAsync()
     {
         var userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         CurrentUser = await _users.FindByIdAsync(userId) ?? new User();
         MyShops = await _shops.ListMyShopsAsync(userId);
+
+        foreach (var shop in MyShops)
+        {
+            var latest = (await _shops.ListMySubmissionsAsync(shop.Id, userId))
+                .OrderByDescending(x => x.CreatedAt)
+                .ThenByDescending(x => x.Id)
+                .FirstOrDefault();
+
+            if (latest != null)
+                LatestSubmissions[shop.Id] = latest;
+        }
     }
 }

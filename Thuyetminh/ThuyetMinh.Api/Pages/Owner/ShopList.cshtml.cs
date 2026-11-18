@@ -15,12 +15,28 @@ public class ShopListModel : PageModel
     public List<Shop> Shops { get; set; } = new();
     public bool HasRejectedSubmissions { get; set; } = false;
 
+    public Dictionary<long, ShopSubmission> LatestSubmissions { get; set; } = new();
+
     public async Task OnGetAsync()
     {
         var userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         Shops = await _shops.ListMyShopsAsync(userId);
         
         // Kiểm tra xem có quán nào đang ở trạng thái Bị từ chối không
-        HasRejectedSubmissions = Shops.Any(s => s.PublishStatus == PublishStatus.Rejected);
+        foreach (var shop in Shops)
+        {
+            var submissions = await _shops.ListMySubmissionsAsync(shop.Id, userId);
+
+            var latest = submissions
+                .OrderByDescending(s => s.CreatedAt)
+                .ThenByDescending(s => s.Id)
+                .FirstOrDefault();
+
+            if (latest != null)
+                LatestSubmissions[shop.Id] = latest;
+        }
+
+        HasRejectedSubmissions = LatestSubmissions.Values
+            .Any(s => s.Status == SubmissionStatus.Rejected);
     }
 }
