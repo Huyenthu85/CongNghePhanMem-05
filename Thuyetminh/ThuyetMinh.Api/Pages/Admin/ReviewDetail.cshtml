@@ -44,7 +44,7 @@
 
     @if (!string.IsNullOrEmpty(Model.Message))
     {
-        <p class="success">@Model.Message</p>
+        <p class="error" role="alert">@Model.Message</p>
     }
 
     <label>Lý do từ chối (chỉ nhập khi từ chối)</label>
